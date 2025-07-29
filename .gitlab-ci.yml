@@ -1,0 +1,39 @@
+default:
+  image: docker.io/ubuntu:20.04
+  tags:
+    - dev-common-runner
+  before_script:
+    - apt update
+    - DEBIAN_FRONTEND=noninteractive apt install -y build-essential cmake pkg-config uuid-dev libssl-dev libsecp256k1-dev
+
+build-release:
+  stage: build
+  script:
+    - mkdir build-release && cmake -S . -B build-release -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - cmake --build build-release -j $(nproc)
+  artifacts:
+    paths:
+      - build-release/
+
+tests-release:
+  stage: test
+  needs:
+    - build-release
+  script:
+    - cd build-release && ctest --output-on-failure
+
+build-debug:
+  stage: build
+  script:
+    - mkdir build-debug && cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build build-debug -j $(nproc)
+  artifacts:
+    paths:
+      - build-debug/
+
+tests-debug:
+  stage: test
+  needs:
+    - build-debug
+  script:
+    - cd build-debug && ctest --output-on-failure

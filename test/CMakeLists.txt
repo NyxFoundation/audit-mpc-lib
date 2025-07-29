@@ -1,0 +1,10 @@
+add_library(tests_main OBJECT tests_main.cpp)
+target_link_libraries(tests_main PUBLIC cosigner)
+
+add_subdirectory(cosigner)
+add_subdirectory(crypto/drng)
+add_subdirectory(crypto/ed25519_algebra)
+add_subdirectory(crypto/paillier)
+add_subdirectory(crypto/secp256k1_algebra)
+add_subdirectory(crypto/shamir_secret_sharing)
+add_subdirectory(crypto/zero_knowledge_proof)
