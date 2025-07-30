@@ -44,9 +44,10 @@ commitments_status commitments_verify_commitment(const uint8_t *data, uint32_t d
     return CRYPTO_memcmp(hash, commitment->commitment, sizeof(commitments_sha256_t)) ? COMMITMENTS_INVALID_COMMITMENT : COMMITMENTS_SUCCESS;
 }
 
-// @audit MEDIUM: RAND_bytes failure could indicate entropy exhaustion
-// ↳ OpenSSL blocks until sufficient entropy available, but embedded systems may stall
-// ↳ Consider RAND_status() check for early entropy availability detection
+// @audit-ok: RAND_bytes failure properly handled with error propagation
+// ↳ After review: OpenSSL blocks until entropy available, failure indicates system issue
+// ↳ Function correctly returns error on RAND_bytes failure
+// ↳ RAND_status() check unnecessary as RAND_bytes handles entropy internally
 commitments_status commitments_ctx_commitment_new(commitments_ctx_t **ctx)
 {
     commitments_ctx_t *local_ctx;

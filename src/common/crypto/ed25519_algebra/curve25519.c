@@ -5547,6 +5547,8 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
 
 // @audit Weak-Input-Validation: Missing null pointer checks for out_public_key and private_key parameters
 // ↳ Function assumes valid pointers but doesn't validate, could crash on NULL
+// ↳ After review: Confirmed - NULL pointers cause immediate segfault
+// ↳ All callers must ensure parameters are non-NULL before invocation
 void ED25519_public_from_private(uint8_t out_public_key[32],
                                  const uint8_t private_key[32])
 {
@@ -5576,6 +5578,8 @@ int X25519(uint8_t out_shared_key[32], const uint8_t private_key[32],
 
 // @audit Weak-Input-Validation: Missing null pointer checks for out_public_value and private_key parameters  
 // ↳ Function assumes valid pointers but doesn't validate, could crash on NULL
+// ↳ After review: Confirmed - NULL pointers cause immediate segfault
+// ↳ All callers must ensure parameters are non-NULL before invocation
 void X25519_public_from_private(uint8_t out_public_value[32],
                                 const uint8_t private_key[32])
 {

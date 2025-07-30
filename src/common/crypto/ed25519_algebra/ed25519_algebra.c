@@ -67,10 +67,8 @@ static inline int ed25519_to_scalar(const ed25519_scalar_t in, ed25519_scalar_t 
 
 // @audit HIGH: Non-constant time scalar multiplication
 // ↳ Uses _vartime functions which leak scalar bits through timing
-// ↳ Only use for public scalars, never for secret key material
-// @audit HIGH: Non-constant time scalar multiplication
-// ↳ Uses _vartime functions which leak scalar bits through timing
-// ↳ Only use for public scalars, never for secret key material
+// ↳ After review: Confirmed timing vulnerability in secret scalar operations
+// ↳ Must use constant-time operations for private key material
 static inline int ed25519_scalar_mult(ed25519_point_t res, const ed25519_scalar_t exp, const ed25519_point_t point)
 {
     static const ed25519_scalar_t ZERO = {0};

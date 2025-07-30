@@ -104,6 +104,7 @@ long paillier_generate_key_pair(uint32_t key_len, paillier_public_key_t **pub, p
     // @audit CRITICAL: Weak key length validation allows insecure keys
     // ↳ MIN_KEY_LEN_IN_BITS = 256 bits factorizable in seconds by GNFS
     // ↳ Production systems require ≥ 2048 bits for 112-bit security level
+    // ↳ After review: Confirmed critical - 256-bit keys trivially broken
     // ↳ Proof trace: paillier_generate_key_pair (L87→104) → paillier_internal.h:13
     if (key_len < MIN_KEY_LEN_IN_BITS)
     {
