@@ -346,6 +346,10 @@ cleanup:
     return status;
 }
 
+// @audit HIGH: Range proof generation without explicit range validation
+// ↳ No check that secret fits within expected range before encryption
+// ↳ Relies on elliptic_curve256_scalar_t size constraint only (256 bits)
+// ↳ Should validate secret < 2^l where l is the proven range
 zero_knowledge_proof_status range_proof_paillier_encrypt_with_exponent_zkpok_generate(const ring_pedersen_public_t *ring_pedersen, const paillier_public_key_t *paillier, const elliptic_curve256_algebra_ctx_t *algebra, 
     const uint8_t *aad, uint32_t aad_len, const elliptic_curve256_scalar_t *secret, paillier_with_range_proof_t **proof)
 {

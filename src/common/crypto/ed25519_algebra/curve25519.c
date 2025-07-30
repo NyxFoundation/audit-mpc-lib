@@ -5429,6 +5429,10 @@ static void sc_muladd(uint8_t *s, const uint8_t *a, const uint8_t *b,
     s[31] = (uint8_t) (s11 >> 17);
 }
 
+// @audit-ok: Proper Ed25519 implementation with secure memory cleanup
+// ↳ Uses deterministic nonce generation per RFC 8032
+// ↳ OPENSSL_cleanse() removes sensitive data from memory (lines 5467-5469)
+// ↳ No timing leaks in scalar operations
 int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
                  const uint8_t public_key[32], const uint8_t private_key[32])
 {

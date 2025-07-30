@@ -352,6 +352,10 @@ uint8_t *paillier_public_key_serialize(const paillier_public_key_t *pub, uint8_t
     return buffer;
 }
 
+// @audit HIGH: Deserialization accepts insecure key sizes (MIN_KEY_LEN_IN_BITS = 256)
+// ↳ Line 391 only checks >= 256 bits, should require >= 2048 for production
+// ↳ No validation that n is odd or composite
+// ↳ Attacker could provide small/invalid n values
 paillier_public_key_t *paillier_public_key_deserialize(const uint8_t *buffer, uint32_t buffer_len)
 {
     paillier_public_key_t *pub = NULL;
@@ -754,6 +758,9 @@ cleanup:
     return ret;
 }
 
+// @audit-ok: Public encryption function validates inputs properly
+// ↳ Checks plaintext < n to prevent invalid inputs
+// ↳ Uses secure BN_CTX allocation
 long paillier_encrypt(const paillier_public_key_t *key, const uint8_t *plaintext, uint32_t plaintext_len, uint8_t *ciphertext, uint32_t ciphertext_len, uint32_t *ciphertext_real_len)
 {
     long ret = -1;
@@ -1004,6 +1011,9 @@ cleanup:
     return ret;
 }
 
+// @audit-ok: Properly validates ciphertext range (c < n²) before decryption
+// ↳ Line 1058: BN_cmp(c, key->pub.n2) >= 0 check prevents invalid ciphertexts
+// ↳ Prevents potential exceptions in modular exponentiation
 long paillier_decrypt(const paillier_private_key_t *key, const uint8_t *ciphertext, uint32_t ciphertext_len, uint8_t *plaintext, uint32_t plaintext_len, uint32_t *plaintext_real_len)
 {
     long ret = -1;
@@ -1171,6 +1181,10 @@ cleanup:
     return ret;
 }
 
+// @audit MEDIUM: Uses non-constant time is_coprime_fast for ciphertext validation
+// ↳ Timing leak on public ciphertext values (lines 1238-1239)
+// ↳ Could reveal information about ciphertext structure to timing attackers
+// ↳ Consider constant-time validation or skip check (valid ciphertexts always coprime)
 long paillier_add(const paillier_public_key_t *key, const uint8_t *a_ciphertext, uint32_t a_ciphertext_len, const uint8_t *b_ciphertext, uint32_t b_ciphertext_len, 
     uint8_t *result, uint32_t result_len, uint32_t *result_real_len)
 {

@@ -466,6 +466,10 @@ cleanup:
     return ret;
 }
 
+// @audit-ok: Properly validates share uniqueness before reconstruction
+// ↳ Lines 482-489: Ensures all share IDs are non-zero and unique
+// ↳ Prevents duplicate share attacks in Lagrange interpolation
+// ↳ Uses secure modular arithmetic for reconstruction
 verifiable_secret_sharing_status verifiable_secret_sharing_reconstruct(const elliptic_curve256_algebra_ctx_t *algebra, const shamir_secret_share_t *shares, uint8_t shares_count, uint8_t *secret, uint32_t secret_len, 
     uint32_t *out_secret_len)
 {

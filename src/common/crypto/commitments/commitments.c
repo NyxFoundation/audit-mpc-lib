@@ -119,6 +119,9 @@ commitments_status commitments_ctx_verify_update(commitments_ctx_t *ctx, const v
     return COMMITMENTS_SUCCESS;
 }
 
+// @audit-ok: Uses constant-time comparison CRYPTO_memcmp for commitment verification
+// ↳ Prevents timing attacks on commitment verification
+// ↳ Line 131: CRYPTO_memcmp prevents byte-by-byte timing leaks
 commitments_status commitments_ctx_verify_final(commitments_ctx_t *ctx)
 {
     commitments_sha256_t hash;

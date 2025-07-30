@@ -115,6 +115,9 @@ static inline uint8_t is_zero(const elliptic_curve256_scalar_t randomness)
     return 1;
 }
 
+// @audit-ok: Properly validates custom randomness is non-zero before use
+// ↳ is_zero() check at line 127 prevents zero randomness attacks
+// ↳ Zero randomness would leak secret: e = H(g^k) where k=0 reveals x
 zero_knowledge_proof_status schnorr_zkp_generate_with_custom_randomness(const elliptic_curve256_algebra_ctx_t *algebra, const uint8_t *prover_id, uint32_t id_len, const elliptic_curve256_scalar_t *secret, const elliptic_curve256_point_t *public_data, 
     const elliptic_curve256_scalar_t *randomness, schnorr_zkp_t *proof)
 {

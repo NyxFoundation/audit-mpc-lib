@@ -68,6 +68,9 @@ static inline int ed25519_to_scalar(const ed25519_scalar_t in, ed25519_scalar_t 
 // @audit HIGH: Non-constant time scalar multiplication
 // ↳ Uses _vartime functions which leak scalar bits through timing
 // ↳ Only use for public scalars, never for secret key material
+// @audit HIGH: Non-constant time scalar multiplication
+// ↳ Uses _vartime functions which leak scalar bits through timing
+// ↳ Only use for public scalars, never for secret key material
 static inline int ed25519_scalar_mult(ed25519_point_t res, const ed25519_scalar_t exp, const ed25519_point_t point)
 {
     static const ed25519_scalar_t ZERO = {0};
@@ -80,6 +83,8 @@ static inline int ed25519_scalar_mult(ed25519_point_t res, const ed25519_scalar_
     return 1;
 }
 
+// @audit HIGH: Point validation checks for small subgroup attacks
+// @audit-ok: Verifies point has correct order by checking 8*(1/8*P) == P
 // @audit HIGH: Point validation checks for small subgroup attacks
 // @audit-ok: Verifies point has correct order by checking 8*(1/8*P) == P
 static inline int ed25519_is_valid_point(const ed25519_point_t point)
@@ -899,6 +904,12 @@ static const struct bignum_st *order_internal(const elliptic_curve256_algebra_ct
     return NULL;
 }
 
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If ed25519_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If ed25519_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
 elliptic_curve256_algebra_ctx_t* elliptic_curve256_new_ed25519_algebra()
 {
     elliptic_curve256_algebra_ctx_t *ctx = malloc(sizeof(elliptic_curve256_algebra_ctx_t));

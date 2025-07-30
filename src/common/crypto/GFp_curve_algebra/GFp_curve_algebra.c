@@ -805,6 +805,9 @@ cleanup:
 // @audit MEDIUM: ECDSA signature verification - malleability not prevented
 // ↳ Does not enforce s <= n/2 (low-s rule) allowing signature malleability
 // ↳ Malleability is cosmetic for signatures but breaks uniqueness assumptions
+// @audit MEDIUM: ECDSA signature verification - malleability not prevented
+// ↳ Does not enforce s <= n/2 (low-s rule) allowing signature malleability
+// ↳ Malleability is cosmetic for signatures but breaks uniqueness assumptions
 elliptic_curve_algebra_status GFp_curve_algebra_verify_signature(const GFp_curve_algebra_ctx_t *ctx, const elliptic_curve256_point_t *public_key, const elliptic_curve256_scalar_t *message, 
     const elliptic_curve256_scalar_t *sig_r, const elliptic_curve256_scalar_t *sig_s)
 {
@@ -1070,6 +1073,12 @@ static elliptic_curve_algebra_status ec_reduce_stark(const struct elliptic_curve
     return ret;
 }
 
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If secp256k1_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If secp256k1_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
 elliptic_curve256_algebra_ctx_t* elliptic_curve256_new_secp256k1_algebra()
 {
     elliptic_curve256_algebra_ctx_t *ctx = malloc(sizeof(elliptic_curve256_algebra_ctx_t));
@@ -1098,6 +1107,12 @@ elliptic_curve256_algebra_ctx_t* elliptic_curve256_new_secp256k1_algebra()
     return ctx;
 }
 
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If secp256r1_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If secp256r1_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
 elliptic_curve256_algebra_ctx_t* elliptic_curve256_new_secp256r1_algebra()
 {
     elliptic_curve256_algebra_ctx_t *ctx = malloc(sizeof(elliptic_curve256_algebra_ctx_t));
@@ -1126,6 +1141,12 @@ elliptic_curve256_algebra_ctx_t* elliptic_curve256_new_secp256r1_algebra()
     return ctx;
 }
 
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If stark_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
+// @audit HIGH: Wrapper initialization lacks error checking for inner context
+// ↳ If stark_algebra_ctx_new() fails, ctx->ctx will be NULL
+// ↳ Subsequent operations on NULL ctx->ctx will crash
 elliptic_curve256_algebra_ctx_t* elliptic_curve256_new_stark_algebra()
 {
     elliptic_curve256_algebra_ctx_t *ctx = malloc(sizeof(elliptic_curve256_algebra_ctx_t));

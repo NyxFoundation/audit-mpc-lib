@@ -197,6 +197,9 @@ static uint32_t ring_pedersen_public_serialize_internal(const ring_pedersen_publ
     return needed_len;
 }
 
+// @audit MEDIUM: Integer overflow in deserialization length checks
+// ↳ len could be UINT32_MAX causing buffer_len - sizeof(uint32_t) to overflow
+// ↳ Subsequent BN_bin2bn could read beyond buffer bounds
 static uint32_t ring_pedersen_public_deserialize_internal(ring_pedersen_public_t *pub, const uint8_t *buffer, uint32_t buffer_len)
 {
     uint32_t len = 0;
