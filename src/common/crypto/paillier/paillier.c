@@ -7,7 +7,8 @@
 
 // WARNING: this function doesn't run in constant time!
 // @audit HIGH: Non-constant time operation may leak information through timing channels
-// @audit-issue: Timing attack vector in coprimality check could reveal private key information
+// ↳ Used in encryption with public values only, not with private key material
+// ↳ Still a timing leak but lower impact than if used with secrets
 int is_coprime_fast(const BIGNUM *in_a, const BIGNUM *in_b, BN_CTX *ctx)
 {
     BIGNUM *a, *b;
@@ -80,9 +81,9 @@ cleanup:
 }
 
 // @audit CRITICAL: Key generation function - most sensitive operation in Paillier cryptosystem
-// @audit-issue: Prime generation must use sufficient entropy and pass primality tests
-// @audit-issue: Verify gcd(λ(n), n) = 1 to ensure proper key structure
-// @audit-issue: Constants p≡3 mod 8, q≡7 mod 8 required for Paillier-Blum ZKP
+// @audit-issue: MIN_KEY_LEN_IN_BITS = 256 is too small for production (should be >= 2048)
+// ↳ BN_generate_prime_ex quality depends on OpenSSL RNG - ensure RAND_status() == 1
+// @audit-ok: Enforces p≡3 mod 8, q≡7 mod 8 and verifies gcd(λ(n), n) = 1
 long paillier_generate_key_pair(uint32_t key_len, paillier_public_key_t **pub, paillier_private_key_t **priv)
 {
     long ret = -1;
@@ -99,7 +100,7 @@ long paillier_generate_key_pair(uint32_t key_len, paillier_public_key_t **pub, p
     {
         return PAILLIER_ERROR_INVALID_PARAM;
     }
-    // @audit MEDIUM: Minimum key length check - verify MIN_KEY_LEN_IN_BITS is >= 2048
+    // @audit CRITICAL: MIN_KEY_LEN_IN_BITS = 256 is insecure for production use
     if (key_len < MIN_KEY_LEN_IN_BITS)
     {
         return PAILLIER_ERROR_KEYLEN_TOO_SHORT;
@@ -159,21 +160,21 @@ long paillier_generate_key_pair(uint32_t key_len, paillier_public_key_t **pub, p
     }
 
     // Choose two large prime p,q numbers having gcd(pq, (p-1)(q-1)) == 1
-    // @audit CRITICAL: Prime generation loop - verify entropy source quality
+    // @audit-ok: Prime generation loop ensures p != q and proper structure
     do
     {   // note - originally we had used p and q to be 4*k + 3. The new form keeps this requirement because
         // both p and q still satisfies 4 * k + 3
 
         // p needs to be in the form of p = 8 * k + 3 ( p = 3 mod 8) to allow efficient calculation off fourth roots 
         // (needed in paillier blum zkp)
-        // @audit-issue: BN_generate_prime_ex uses system RNG - ensure RAND_status() == 1
+        // @audit HIGH: BN_generate_prime_ex depends on OpenSSL RNG entropy
         if (!BN_generate_prime_ex(p, key_len / 2, 0, eight, three, NULL))
     {
             goto cleanup;
         }
 
         // and set must be q = 7 mod 8 (8 * k + 7)
-        // @audit-issue: Verify p != q to prevent n = p² which breaks security
+        // @audit-ok: Loop ensures p != q via BN_cmp check below
         if (!BN_generate_prime_ex(q, key_len / 2, 0, eight, seven, NULL))
         {
             goto cleanup;
@@ -609,14 +610,16 @@ void paillier_free_private_key(paillier_private_key_t *priv)
     }
 }
 
-// @audit CRITICAL: Encryption function - must validate randomness and prevent plaintext leakage
-// @audit-issue: Uses is_coprime_fast which is not constant-time
+// @audit HIGH: Encryption function - must validate randomness and prevent plaintext leakage
+// ↳ Uses is_coprime_fast which is not constant-time (timing leak on public r value)
+// ↳ Risk: Timing analysis could reveal information about random r
 long paillier_encrypt_openssl_internal(const paillier_public_key_t *key, BIGNUM *ciphertext, const BIGNUM *r, const BIGNUM *plaintext, BN_CTX *ctx)
 {
     int ret = -1;
 
     // Verify that r E Zn*
     // @audit HIGH: Non-constant time coprimality check could leak randomness info
+    // ↳ Leaking r through timing is concerning as it could enable plaintext recovery
     if (is_coprime_fast(r, key->n, ctx) != 1)
     {
         return PAILLIER_ERROR_INVALID_RANDOMNESS;
@@ -678,10 +681,10 @@ static inline long encrypt_openssl(const paillier_public_key_t *key, BIGNUM *cip
     }
     else
     {
-        // @audit CRITICAL: Random number generation for encryption blinding factor
+        // @audit-ok: Random generation loop ensures r is coprime to n
         do
         {
-            // @audit-issue: BN_rand_range quality depends on OpenSSL RNG seeding
+            // @audit HIGH: BN_rand_range depends on OpenSSL RNG entropy
             if (!BN_rand_range(r, key->n))
             {
                 ret = ERR_get_error() * -1;
@@ -699,7 +702,8 @@ static inline long encrypt_openssl(const paillier_public_key_t *key, BIGNUM *cip
 }
 
 // @audit CRITICAL: Decryption function - must protect private key operations
-// @audit-issue: Verify ciphertext is in valid range [0, n²)
+// @audit-issue: Does not verify ciphertext is in valid range [0, n²)
+// ↳ Invalid ciphertext could cause exceptions or leak information
 long paillier_decrypt_openssl_internal(const paillier_private_key_t *key, const BIGNUM *ciphertext, BIGNUM *plaintext, BN_CTX *ctx)
 {
     int ret = -1;

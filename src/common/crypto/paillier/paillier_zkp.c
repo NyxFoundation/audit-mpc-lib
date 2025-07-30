@@ -28,8 +28,9 @@ typedef struct
   uint8_t b[PAILLIER_BLUM_STATISTICAL_SECURITY];
 } zkp_paillier_blum_modulus_proof_t;
 
-// @audit CRITICAL: Deterministic random generation for ZKP - must be unpredictable
-// @audit-issue: Uses SHA512 expansion of seed - verify seed has sufficient entropy
+// @audit-ok: Deterministic randomness for ZKP is intentional and secure
+// ↳ Seed derived from SHA256(SALT || n || aad) provides domain separation
+// ↳ Uses Fiat-Shamir heuristic for non-interactive ZKP
 static BIGNUM* deterministic_rand(const sha256_md_t seed, uint32_t n_len, BIGNUM *bn_r, sha256_md_t *out_md)
 {
     SHA512_CTX sha512_ctx;
@@ -82,8 +83,9 @@ static inline long update_with_bignum(SHA256_CTX *ctx, const BIGNUM *bn)
 }
 
 // @audit CRITICAL: Zero-knowledge proof of factorization - proves knowledge of p,q without revealing them
-// @audit-issue: Verify soundness parameter FACTORIZANTION_ZKP_K = 10 provides sufficient security
-// @audit-issue: Must use secure randomness for commitment values
+// @audit-issue: Soundness parameter FACTORIZANTION_ZKP_K = 10 provides ~1/1024 cheating probability
+// ↳ May be insufficient for high-security applications (consider 80+ rounds for 2^-80 soundness)
+// @audit-ok: Uses BN_rand_range for commitment r, deterministic randomness for challenges is correct
 long paillier_generate_factorization_zkpok(const paillier_private_key_t *priv, 
                                            const uint8_t *aad, 
                                            uint32_t aad_len, 
@@ -278,9 +280,9 @@ cleanup:
     return ret;
 }
 
-// @audit CRITICAL: Verifies ZKP of factorization - essential for validating key generation
-// @audit-issue: Must verify all K rounds to prevent cheating prover
-// @audit-issue: Challenge generation must include AAD to prevent replay attacks
+// @audit-ok: Verifies ZKP of factorization correctly
+// ↳ Verifies all K rounds as required
+// ↳ Challenge includes AAD preventing replay attacks via SHA256(SALT || n || aad)
 long paillier_verify_factorization_zkpok(const paillier_public_key_t *pub, 
                                          const uint8_t *aad, 
                                          uint32_t aad_len, 
@@ -889,9 +891,9 @@ static inline uint8_t get_2bit_number(const uint8_t* array, const uint32_t i)
 
 
 
-// @audit CRITICAL: Paillier-Blum ZKP - proves n is a Blum integer (product of two primes ≡ 3 mod 4)
-// @audit-issue: Security parameter PAILLIER_BLUM_STATISTICAL_SECURITY = 80 rounds
-// @audit-issue: Requires p ≡ 3 mod 8 and q ≡ 7 mod 8 for efficient 4th root computation
+// @audit-ok: Paillier-Blum ZKP correctly proves n is a Blum integer
+// ↳ Security parameter PAILLIER_BLUM_STATISTICAL_SECURITY = 80 provides 2^-80 soundness
+// ↳ p ≡ 3 mod 8 and q ≡ 7 mod 8 enforced by key generation for efficient 4th roots
 long paillier_generate_paillier_blum_zkp(const paillier_private_key_t *priv, const uint8_t *aad, uint32_t aad_len, uint8_t *serialized_proof, uint32_t proof_len, uint32_t *proof_real_len)
 {
     BN_CTX *ctx = NULL;
@@ -1359,9 +1361,9 @@ cleanup:
     return ret;
 }
 
-// @audit CRITICAL: Verifies Paillier-Blum property - essential for CRT optimizations
-// @audit-issue: Must check all 80 rounds of the proof
-// @audit-issue: Verify challenges are computed correctly with AAD
+// @audit-ok: Verifies Paillier-Blum property correctly
+// ↳ Checks all 80 rounds as required for 2^-80 soundness
+// ↳ Challenges computed with AAD via SHA256(n || aad || round_data)
 long paillier_verify_paillier_blum_zkp(const paillier_public_key_t *pub, const uint8_t *aad, uint32_t aad_len, const uint8_t *serialized_proof, uint32_t proof_len)
 {
     BN_CTX *ctx = NULL;

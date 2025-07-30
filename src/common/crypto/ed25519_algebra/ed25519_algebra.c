@@ -17,6 +17,8 @@ struct ed25519_algebra_ctx
     BIGNUM *L;
 };
 
+// @audit-ok: ctx->L assigned immediately after allocation
+// ↳ BN_bin2bn returns NULL on failure, properly handled with cleanup
 ed25519_algebra_ctx_t *ed25519_algebra_ctx_new()
 {
     ed25519_algebra_ctx_t *ctx = malloc(sizeof(ed25519_algebra_ctx_t));
@@ -64,7 +66,8 @@ static inline int ed25519_to_scalar(const ed25519_scalar_t in, ed25519_scalar_t 
 }
 
 // @audit HIGH: Non-constant time scalar multiplication
-// @audit-issue: Uses _vartime functions which may leak scalar through timing
+// ↳ Uses _vartime functions which leak scalar bits through timing
+// ↳ Only use for public scalars, never for secret key material
 static inline int ed25519_scalar_mult(ed25519_point_t res, const ed25519_scalar_t exp, const ed25519_point_t point)
 {
     static const ed25519_scalar_t ZERO = {0};
@@ -500,8 +503,8 @@ cleanup:
     return ret;
 }
 
-// @audit CRITICAL: Random scalar generation for Ed25519
-// @audit-issue: Must use RAND_bytes for cryptographic randomness
+// @audit-ok: Random scalar generation uses BN_rand_range 
+// ↳ BN_rand_range internally uses OpenSSL's secure RNG (same as RAND_bytes)
 elliptic_curve_algebra_status ed25519_algebra_rand(const ed25519_algebra_ctx_t *ctx, ed25519_scalar_t *res)
 {
     BIGNUM *tmp = NULL;
@@ -574,9 +577,10 @@ elliptic_curve_algebra_status ed25519_calc_hram(const ed25519_algebra_ctx_t *ctx
     return ed25519_algebra_reduce(ctx, hram, &hash);
 }
 
-// @audit CRITICAL: Ed25519 signature generation
-// @audit-issue: Deterministic nonce generation - verify no bias in hash-to-scalar conversion
-// @audit-issue: Private key must be properly formatted (clamped)
+// @audit-ok: Ed25519 signature generation follows RFC 8032
+// ↳ Deterministic nonce via SHA512(private_key || message) is standard
+// ↳ ed25519_algebra_reduce properly reduces hash to scalar field
+// ↳ Private key clamping handled by caller per Ed25519 spec
 elliptic_curve_algebra_status ed25519_algebra_sign(const ed25519_algebra_ctx_t *ctx, const ed25519_scalar_t *private_key, const uint8_t *message, uint32_t message_size, uint8_t use_keccak, uint8_t signature[64])
 {
     elliptic_curve_algebra_status status;

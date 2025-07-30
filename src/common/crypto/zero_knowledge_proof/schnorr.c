@@ -62,6 +62,7 @@ static zero_knowledge_proof_status schnorr_zkp_generate_impl(const elliptic_curv
     return ZKP_SUCCESS;
 }
 
+// @audit-ok: Proper parameter validation and use of local_proof to prevent partial writes on failure
 zero_knowledge_proof_status schnorr_zkp_generate(const elliptic_curve256_algebra_ctx_t *algebra, const uint8_t *prover_id, uint32_t id_len, const elliptic_curve256_scalar_t *secret, const elliptic_curve256_point_t *public_data, schnorr_zkp_t *proof)
 {
     zero_knowledge_proof_status ret = ZKP_UNKNOWN_ERROR;
@@ -132,6 +133,9 @@ zero_knowledge_proof_status schnorr_zkp_generate_with_custom_randomness(const el
     return ret;
 }
 
+// @audit MEDIUM: Challenge computation relies on prover_id for replay protection
+// ↳ Caller must ensure prover_id includes session-specific data (nonce/timestamp)
+// ↳ Without unique prover_id, proofs could be replayed across sessions
 zero_knowledge_proof_status schnorr_zkp_verify(const elliptic_curve256_algebra_ctx_t *algebra, const uint8_t *prover_id, uint32_t id_len, const elliptic_curve256_point_t *public_data, const schnorr_zkp_t *proof)
 {
     elliptic_curve_algebra_status status = ELLIPTIC_CURVE_ALGEBRA_UNKNOWN_ERROR;

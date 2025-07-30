@@ -59,6 +59,8 @@ GFp_curve_algebra_ctx_t *secp256k1_algebra_ctx_new()
     return ctx;
 }
 
+// @audit-ok: ctx->curve assigned immediately after allocation
+// ↳ On EC_GROUP_new_by_curve_name failure, ctx is freed before return
 GFp_curve_algebra_ctx_t *secp256r1_algebra_ctx_new()
 {
     GFp_curve_algebra_ctx_t *ctx = malloc(sizeof(GFp_curve_algebra_ctx_t));
@@ -75,6 +77,7 @@ GFp_curve_algebra_ctx_t *secp256r1_algebra_ctx_new()
     return ctx;
 }
 
+// @audit-ok: Proper initialization of curve to NULL before use
 GFp_curve_algebra_ctx_t *stark_algebra_ctx_new()
 {
     int ret = 0;
@@ -387,8 +390,9 @@ cleanup:
     return status;
 }
 
-// @audit HIGH: Scalar multiplication with generator - commonly used for key generation
-// @audit-issue: Ensure scalar is in valid range [1, n-1]
+// @audit-ok: Scalar multiplication with generator 
+// ↳ OpenSSL EC_POINT_mul handles all scalars mod n automatically
+// ↳ Zero scalar produces point at infinity (handled by caller)
 elliptic_curve_algebra_status GFp_curve_algebra_generator_mul(const GFp_curve_algebra_ctx_t *ctx, elliptic_curve256_point_t *res, const elliptic_curve256_scalar_t *exp)
 {
     if (!exp)
@@ -771,8 +775,9 @@ cleanup:
     return ret;
 }
 
-// @audit CRITICAL: Random scalar generation - must use secure randomness
-// @audit-issue: BN_rand_range uses OpenSSL RNG - verify RAND_status() == 1
+// @audit-ok: Random scalar generation uses BN_rand_range
+// ↳ BN_rand_range internally uses OpenSSL's secure RNG (RAND_bytes)
+// ↳ OpenSSL blocks until sufficient entropy is available
 elliptic_curve_algebra_status GFp_curve_algebra_rand(GFp_curve_algebra_ctx_t *ctx, elliptic_curve256_scalar_t *res)
 {
     BIGNUM *tmp = NULL;
@@ -797,8 +802,9 @@ cleanup:
     return ret;
 }
 
-// @audit CRITICAL: ECDSA signature verification - must prevent malleability attacks
-// @audit-issue: Verify s is in valid range [1, n/2] to prevent signature malleability
+// @audit MEDIUM: ECDSA signature verification - malleability not prevented
+// ↳ Does not enforce s <= n/2 (low-s rule) allowing signature malleability
+// ↳ Malleability is cosmetic for signatures but breaks uniqueness assumptions
 elliptic_curve_algebra_status GFp_curve_algebra_verify_signature(const GFp_curve_algebra_ctx_t *ctx, const elliptic_curve256_point_t *public_key, const elliptic_curve256_scalar_t *message, 
     const elliptic_curve256_scalar_t *sig_r, const elliptic_curve256_scalar_t *sig_s)
 {

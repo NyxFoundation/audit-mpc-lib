@@ -12,14 +12,14 @@ struct commitments_ctx
     uint8_t verifier;
 };
 
-// @audit HIGH: Commitment scheme using SHA256 with random salt
-// @audit-ok: Uses 256-bit random salt for hiding property
+// @audit-ok: Commitment scheme using SHA256 with 256-bit random salt
+// ↳ Provides computational hiding and perfect binding properties
 commitments_status commitments_create_commitment_for_data(const uint8_t *data, uint32_t data_len, commitments_commitment_t *commitment)
 {
     SHA256_CTX ctx;
     if (!data || !data_len || !commitment)
         return COMMITMENTS_INVALID_PARAMETER;
-    // @audit-issue: RAND_bytes failure should be checked for entropy exhaustion
+    // @audit-ok: RAND_bytes failure properly handled with error return
     if (!RAND_bytes(commitment->salt, sizeof(commitments_sha256_t)))
         return COMMITMENTS_INTERNAL_ERROR;
     SHA256_Init(&ctx);
@@ -44,6 +44,9 @@ commitments_status commitments_verify_commitment(const uint8_t *data, uint32_t d
     return CRYPTO_memcmp(hash, commitment->commitment, sizeof(commitments_sha256_t)) ? COMMITMENTS_INVALID_COMMITMENT : COMMITMENTS_SUCCESS;
 }
 
+// @audit MEDIUM: RAND_bytes failure could indicate entropy exhaustion
+// ↳ OpenSSL blocks until sufficient entropy available, but embedded systems may stall
+// ↳ Consider RAND_status() check for early entropy availability detection
 commitments_status commitments_ctx_commitment_new(commitments_ctx_t **ctx)
 {
     commitments_ctx_t *local_ctx;

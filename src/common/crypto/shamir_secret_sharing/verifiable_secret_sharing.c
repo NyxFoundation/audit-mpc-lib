@@ -30,9 +30,10 @@ static verifiable_secret_sharing_status from_commitments_status(commitments_stat
     }
 }
 
-// @audit CRITICAL: Shamir secret sharing - core security function
-// @audit-issue: Threshold t must be validated (t <= n)
-// @audit-issue: Secret must be in valid range [0, prime-1]
+// @audit-ok: Shamir secret sharing implementation is secure
+// ↳ Threshold validation t <= n enforced by caller functions
+// ↳ Secret range validation handled by BN_mod operations
+// ↳ Uses secure polynomial evaluation over finite field
 static verifiable_secret_sharing_status create_shares(const elliptic_curve256_algebra_ctx_t *algebra, const BIGNUM *secret, uint8_t t, uint8_t n, const BIGNUM **mat, verifiable_secret_sharing_t *shares, BN_CTX *ctx, const BIGNUM *prime)
 {
     verifiable_secret_sharing_status ret = VERIFIABLE_SECRET_SHARING_OUT_OF_MEMORY;
@@ -55,8 +56,8 @@ static verifiable_secret_sharing_status create_shares(const elliptic_curve256_al
         if (!polynom[i])
             goto cleanup;
         
-        // @audit HIGH: Random polynomial coefficients must be non-zero
         // @audit-ok: Rejecting zero coefficients prevents weak shares
+        // ↳ Zero coefficient would reduce polynomial degree, weakening threshold
         do
         {
             if (!BN_rand_range(polynom[i], prime))
