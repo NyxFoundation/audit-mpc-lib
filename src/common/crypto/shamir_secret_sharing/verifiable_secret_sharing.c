@@ -30,6 +30,9 @@ static verifiable_secret_sharing_status from_commitments_status(commitments_stat
     }
 }
 
+// @audit CRITICAL: Shamir secret sharing - core security function
+// @audit-issue: Threshold t must be validated (t <= n)
+// @audit-issue: Secret must be in valid range [0, prime-1]
 static verifiable_secret_sharing_status create_shares(const elliptic_curve256_algebra_ctx_t *algebra, const BIGNUM *secret, uint8_t t, uint8_t n, const BIGNUM **mat, verifiable_secret_sharing_t *shares, BN_CTX *ctx, const BIGNUM *prime)
 {
     verifiable_secret_sharing_status ret = VERIFIABLE_SECRET_SHARING_OUT_OF_MEMORY;
@@ -52,6 +55,8 @@ static verifiable_secret_sharing_status create_shares(const elliptic_curve256_al
         if (!polynom[i])
             goto cleanup;
         
+        // @audit HIGH: Random polynomial coefficients must be non-zero
+        // @audit-ok: Rejecting zero coefficients prevents weak shares
         do
         {
             if (!BN_rand_range(polynom[i], prime))
@@ -84,6 +89,7 @@ static verifiable_secret_sharing_status create_shares(const elliptic_curve256_al
             goto cleanup;
         }
     }
+    // @audit-ok: Secure cleanup of sensitive coefficient data
     OPENSSL_cleanse(coefficient, sizeof(elliptic_curve256_scalar_t));
     
     tmp = BN_CTX_get(ctx);

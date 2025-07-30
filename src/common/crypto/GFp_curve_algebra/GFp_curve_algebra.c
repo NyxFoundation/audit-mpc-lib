@@ -42,6 +42,7 @@ struct GFp_curve_algebra_ctx
     EC_GROUP *curve;
 };
 
+// @audit-ok: Standard secp256k1 curve initialization using OpenSSL
 GFp_curve_algebra_ctx_t *secp256k1_algebra_ctx_new()
 {
     GFp_curve_algebra_ctx_t *ctx = malloc(sizeof(GFp_curve_algebra_ctx_t));
@@ -386,6 +387,8 @@ cleanup:
     return status;
 }
 
+// @audit HIGH: Scalar multiplication with generator - commonly used for key generation
+// @audit-issue: Ensure scalar is in valid range [1, n-1]
 elliptic_curve_algebra_status GFp_curve_algebra_generator_mul(const GFp_curve_algebra_ctx_t *ctx, elliptic_curve256_point_t *res, const elliptic_curve256_scalar_t *exp)
 {
     if (!exp)
@@ -768,6 +771,8 @@ cleanup:
     return ret;
 }
 
+// @audit CRITICAL: Random scalar generation - must use secure randomness
+// @audit-issue: BN_rand_range uses OpenSSL RNG - verify RAND_status() == 1
 elliptic_curve_algebra_status GFp_curve_algebra_rand(GFp_curve_algebra_ctx_t *ctx, elliptic_curve256_scalar_t *res)
 {
     BIGNUM *tmp = NULL;
@@ -792,6 +797,8 @@ cleanup:
     return ret;
 }
 
+// @audit CRITICAL: ECDSA signature verification - must prevent malleability attacks
+// @audit-issue: Verify s is in valid range [1, n/2] to prevent signature malleability
 elliptic_curve_algebra_status GFp_curve_algebra_verify_signature(const GFp_curve_algebra_ctx_t *ctx, const elliptic_curve256_point_t *public_key, const elliptic_curve256_scalar_t *message, 
     const elliptic_curve256_scalar_t *sig_r, const elliptic_curve256_scalar_t *sig_s)
 {

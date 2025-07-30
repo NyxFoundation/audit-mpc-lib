@@ -63,6 +63,8 @@ static inline int ed25519_to_scalar(const ed25519_scalar_t in, ed25519_scalar_t 
     return 1;
 }
 
+// @audit HIGH: Non-constant time scalar multiplication
+// @audit-issue: Uses _vartime functions which may leak scalar through timing
 static inline int ed25519_scalar_mult(ed25519_point_t res, const ed25519_scalar_t exp, const ed25519_point_t point)
 {
     static const ed25519_scalar_t ZERO = {0};
@@ -75,6 +77,8 @@ static inline int ed25519_scalar_mult(ed25519_point_t res, const ed25519_scalar_
     return 1;
 }
 
+// @audit HIGH: Point validation checks for small subgroup attacks
+// @audit-ok: Verifies point has correct order by checking 8*(1/8*P) == P
 static inline int ed25519_is_valid_point(const ed25519_point_t point)
 {
     ed25519_point_t p1;
@@ -496,6 +500,8 @@ cleanup:
     return ret;
 }
 
+// @audit CRITICAL: Random scalar generation for Ed25519
+// @audit-issue: Must use RAND_bytes for cryptographic randomness
 elliptic_curve_algebra_status ed25519_algebra_rand(const ed25519_algebra_ctx_t *ctx, ed25519_scalar_t *res)
 {
     BIGNUM *tmp = NULL;
@@ -568,6 +574,9 @@ elliptic_curve_algebra_status ed25519_calc_hram(const ed25519_algebra_ctx_t *ctx
     return ed25519_algebra_reduce(ctx, hram, &hash);
 }
 
+// @audit CRITICAL: Ed25519 signature generation
+// @audit-issue: Deterministic nonce generation - verify no bias in hash-to-scalar conversion
+// @audit-issue: Private key must be properly formatted (clamped)
 elliptic_curve_algebra_status ed25519_algebra_sign(const ed25519_algebra_ctx_t *ctx, const ed25519_scalar_t *private_key, const uint8_t *message, uint32_t message_size, uint8_t use_keccak, uint8_t signature[64])
 {
     elliptic_curve_algebra_status status;
