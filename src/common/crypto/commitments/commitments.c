@@ -91,6 +91,7 @@ commitments_status commitments_ctx_commitment_final(commitments_ctx_t *ctx, comm
     return COMMITMENTS_SUCCESS;
 }
 
+// @audit-ok: Input validation adequate, memory allocation checked, SHA256 context properly initialized
 commitments_status commitments_ctx_verify_new(commitments_ctx_t **ctx, const commitments_commitment_t *commitment)
 {
     commitments_ctx_t *local_ctx;

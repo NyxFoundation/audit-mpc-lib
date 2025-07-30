@@ -6,6 +6,8 @@ size_t SHA3_absorb(uint64_t A[5][5], const unsigned char *inp, size_t len,
                    size_t r);
 void SHA3_squeeze(uint64_t A[5][5], unsigned char *out, size_t len, size_t r);
 
+// @audit Weak-Input-Validation: Missing null pointer check for ctx parameter
+// ↳ Function assumes valid ctx but doesn't validate, could crash on NULL pointer
 int keccak1600_init(KECCAK1600_CTX *ctx, size_t md_size_in_bits, unsigned char pad)
 {
     size_t bsz = (KECCAK1600_WIDTH - md_size_in_bits * 2) / 8;

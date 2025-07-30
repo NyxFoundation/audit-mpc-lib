@@ -11,10 +11,11 @@ struct drng
     uint8_t pos;
 };
 
-// @audit CRITICAL: DRNG initialization - seed must have sufficient entropy
-// ↳ No minimum seed length enforced - should require at least 256 bits  
-// ↳ Caller responsibility to provide high-entropy seed
-// ↳ Deterministic output allows reproducible testing but not for production keys
+// @audit MEDIUM: DRNG accepts weak seeds without validation
+// ↳ No minimum seed_len enforcement allows single-byte seeds
+// ↳ Designed for deterministic testing but risky for production secrets
+// ↳ Consider seed entropy validation for cryptographic use cases
+// ↳ SHA512(seed) provides domain separation but not entropy amplification
 drng_status drng_new(const uint8_t *seed, uint32_t seed_len, drng_t **rng)
 {
     drng_t *local_rng = NULL;
@@ -33,9 +34,10 @@ drng_status drng_new(const uint8_t *seed, uint32_t seed_len, drng_t **rng)
         
     
     local_rng->pos = 0;
-    // @audit MEDIUM: SHA512 output split between data and seed arrays
-    // ↳ Relies on struct memory layout (data[32] followed by seed[32])
-    // ↳ Works but fragile - compiler padding could break this
+    // @audit-ok: Intentional memory layout dependency for SHA512 output split
+    // ↳ SHA512(64 bytes) → data[32] + seed[32] via overflow by design
+    // ↳ struct drng packs data[32] followed by seed[32] with pos byte
+    // ↳ Fragile but functional - consider explicit initialization instead
     SHA512(seed, seed_len, local_rng->data); // data and seed are continuous in memory so SHA512 function will initialize both the data and the seed for the next operation
     *rng = local_rng;
     return DRNG_SUCCESS;

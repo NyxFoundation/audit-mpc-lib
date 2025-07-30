@@ -189,6 +189,9 @@ cleanup:
     return ret;
 }
 
+// @audit Weak-Validation: Threshold validation incomplete for secret sharing security  
+// ↳ Missing check for maximum threshold bounds to prevent information leakage
+// ↳ t=n case allows single-party secret recovery, breaking security model
 verifiable_secret_sharing_status verifiable_secret_sharing_split(const elliptic_curve256_algebra_ctx_t *algebra, const uint8_t *secret, uint32_t secret_len, uint8_t t, uint8_t n, verifiable_secret_sharing_t **shares)
 {
     BN_CTX *ctx = NULL;

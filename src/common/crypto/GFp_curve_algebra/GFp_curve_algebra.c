@@ -159,6 +159,7 @@ static elliptic_curve_algebra_status from_openssl_error(long err)
     return ELLIPTIC_CURVE_ALGEBRA_UNKNOWN_ERROR;
 }
 
+// @audit-ok: Input validation adequate, uses BN_bin2bn for data conversion, proper cleanup on error paths
 elliptic_curve_algebra_status GFp_curve_algebra_generator_mul_data(const GFp_curve_algebra_ctx_t *ctx, const uint8_t *data, uint32_t data_len, elliptic_curve256_point_t *point)
 {
     BN_CTX *bn_ctx = NULL;
