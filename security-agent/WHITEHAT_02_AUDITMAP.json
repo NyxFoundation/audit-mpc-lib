@@ -12,152 +12,48 @@
         "↳ path.size() check at L33",
         "↳ assert on user-controlled path length at L37"
       ],
-      "review_round": 6
+      "review_round": 8
     },
     {
       "file": "src/common/cosigner/cmp_setup_service.cpp",
-      "line": 61,
-      "snippet": "if (t != n)",
-      "risk_category": "Protocol-Limitation",
-      "description": "CMP protocol only supports n-of-n signatures (no threshold). This is a fundamental protocol limitation, not implementation bug.",
-      "status": "ok",
+      "line": 203,
+      "snippet": "throw_cosigner_exception(algebra->add_points(...))",
+      "risk_category": "Error-Handling",
+      "description": "Misleading use of throw_cosigner_exception for normal operation. Function name suggests error handling but used for point addition.",
+      "status": "Vuln",
       "proof_trace": [
-        "generate_setup_commitments (L54-65)",
-        "↳ Protocol design requires all parties to participate"
+        "verify_setup_proofs (L192-234)",
+        "↳ throw_cosigner_exception at L204 for normal computation"
       ],
-      "review_round": 6
+      "review_round": 8
     },
     {
       "file": "src/common/cosigner/cmp_setup_service.cpp",
-      "line": 101,
-      "snippet": "while (i < MAX_ATTEMPTS)",
-      "risk_category": "Timing-Analysis",
-      "description": "Timing variation in key generation is acceptable since this is a one-time setup operation with no secret input correlation.",
-      "status": "ok",
+      "line": 289,
+      "snippet": "if (!_service.backup_key(...))",
+      "risk_category": "Backup-Failure",
+      "description": "Key backup failure leaves key in limbo state. If backup fails, key is deleted but may have been partially distributed to other parties.",
+      "status": "Vuln",
       "proof_trace": [
-        "generate_setup_commitments (L95-124)",
-        "↳ Random key generation loop at L105-117",
-        "↳ No correlation between timing and existing secrets"
+        "create_secret (L236-298)",
+        "↳ backup_key call at L289",
+        "↳ delete_temporary_key_data on failure at L292"
       ],
-      "review_round": 6
+      "review_round": 8
     },
     {
       "file": "src/common/cosigner/cmp_setup_service.cpp",
-      "line": 506,
-      "snippet": "paillier_generate_key_pair(PAILLIER_KEY_SIZE, &paillier_pub, &paillier_priv)",
-      "risk_category": "Key-Strength",
-      "description": "PAILLIER_KEY_SIZE = 256 bits * 8 * 8 = 2048 bits, meets current security standards.",
-      "status": "ok",
+      "line": 378,
+      "snippet": "void cmp_setup_service::add_user(...)",
+      "risk_category": "Reconstruction-Risk",
+      "description": "Critical function reconstructs private key from shares. If malicious party sends invalid shares, key recovery could fail or leak information.",
+      "status": "Vuln",
       "proof_trace": [
-        "create_auxiliary_keys (L504-540)",
-        "↳ PAILLIER_KEY_SIZE defined at L20 as 2048 bits"
+        "add_user (L378-470)",
+        "↳ Share decryption and accumulation L440-455",
+        "↳ No verification of share validity before accumulation"
       ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/cmp_offline_refresh_service.cpp",
-      "line": 29,
-      "snippet": "void refresh_key_request(...)",
-      "risk_category": "Proactive-Security",
-      "description": "Key refresh protocol for proactive security. Prevents long-term key compromise by rotating shares without changing public key.",
-      "status": "ok",
-      "proof_trace": [
-        "refresh_key_request (L29-88)",
-        "↳ Tenant isolation check at L34",
-        "↳ Player validation at L42-48"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/cmp_offline_refresh_service.cpp",
-      "line": 89,
-      "snippet": "void refresh_key(...)",
-      "risk_category": "Share-Refresh",
-      "description": "Key share update using PRFs to generate consistent random shares across parties. Implements proactive security properly.",
-      "status": "ok",
-      "proof_trace": [
-        "refresh_key (L89-160)",
-        "↳ PRF-based share generation at L130-145"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/cmp_ecdsa_signing_service.cpp",
-      "line": 252,
-      "snippet": "void make_sig_s_positive(...)",
-      "risk_category": "Signature-Normalization",
-      "description": "Enforces low-s rule to prevent signature malleability. Critical for blockchain compatibility and preventing transaction malleability attacks.",
-      "status": "ok",
-      "proof_trace": [
-        "make_sig_s_positive (L252-263)",
-        "↳ Proper low-s enforcement with v-value adjustment"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/eddsa_online_signing_service.cpp",
-      "line": 135,
-      "snippet": "uint64_t store_commitments(...)",
-      "risk_category": "Commitment-Scheme",
-      "description": "Commitment storage with proper verification. Prevents parties from changing R values after commitment phase.",
-      "status": "ok",
-      "proof_trace": [
-        "store_commitments (L135-190)",
-        "↳ Commitment verification at L179"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/mta.cpp",
-      "line": 76,
-      "snippet": "static inline void genarate_mta_range_zkp_seed(...)",
-      "risk_category": "Challenge-Generation",
-      "description": "Fiat-Shamir challenge derived from proof commitment. Binds all proof elements to prevent malleability attacks.",
-      "status": "ok",
-      "proof_trace": [
-        "genarate_mta_range_zkp_seed (L76-96)",
-        "↳ SHA256 binding of all proof elements"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/mta.cpp",
-      "line": 504,
-      "snippet": "byte_vector_t beta(secret_size * BETA_HIDING_FACTOR);",
-      "risk_category": "Statistical-Hiding",
-      "description": "BETA_HIDING_FACTOR=5 provides 1280 bits of statistical hiding (256*5), which exceeds standard 128-bit security parameter.",
-      "status": "ok",
-      "proof_trace": [
-        "response (L495-535)",
-        "↳ BETA_HIDING_FACTOR defined at L32 as 5"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/mta.cpp",
-      "line": 700,
-      "snippet": "void batch_response_verifier::process(...)",
-      "risk_category": "ZKP-Verification",
-      "description": "Critical MTA proof verification with range validation. Properly validates z1 and z2 ranges to prevent overflow attacks.",
-      "status": "ok",
-      "proof_trace": [
-        "process (L700-794)",
-        "↳ Range checks at L730-740 prevent overflow"
-      ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/mta.cpp",
-      "line": 800,
-      "snippet": "void batch_response_verifier::verify()",
-      "risk_category": "Statistical-Security",
-      "description": "Batch verification with BATCH_STATISTICAL_SECURITY rounds. Provides 2^-BATCH_STATISTICAL_SECURITY soundness against malicious proofs.",
-      "status": "ok",
-      "proof_trace": [
-        "verify (L800-850)",
-        "↳ Statistical security through batch verification"
-      ],
-      "review_round": 6
+      "review_round": 8
     },
     {
       "file": "src/common/cosigner/mta.cpp",
@@ -170,40 +66,44 @@
         "process_paillier (L854-890)",
         "↳ is_coprime_fast calls at L868, L874, L880, L886"
       ],
-      "review_round": 6
-    },
-    {
-      "file": "src/common/cosigner/cmp_ecdsa_online_signing_service.cpp",
-      "line": 91,
-      "snippet": "if (blocks > MAX_BLOCKS_TO_SIGN)",
-      "risk_category": "DoS-Prevention",
-      "description": "Proper DoS prevention through MAX_BLOCKS_TO_SIGN limit. Prevents resource exhaustion from excessive signing requests.",
-      "status": "ok",
-      "proof_trace": [
-        "start_signing (L63-95)",
-        "↳ Block limit check at L91-95"
-      ],
-      "review_round": 6
+      "review_round": 8
     }
   ],
   "summary": {
-    "rounds": 6,
-    "total_audit_flags": 14,
+    "rounds": 8,
+    "total_audit_flags": 5,
     "high_risk_hotspots": [
       "src/common/cosigner/asymmetric_eddsa_cosigner.cpp:assertion_crash",
-      "src/common/cosigner/mta.cpp:timing_attacks_in_ciphertext_validation"
+      "src/common/cosigner/cmp_setup_service.cpp:backup_failure_handling",
+      "src/common/cosigner/cmp_setup_service.cpp:share_reconstruction_risk"
     ],
     "review_summary": {
-      "transformed_to_audit_ok": 12,
-      "kept_as_vuln": 2,
-      "new_findings": 0,
+      "transformed_to_audit_ok": 14,
+      "kept_as_vuln": 5,
+      "review_details": {
+        "round_8_transformations": [
+          "CMP protocol n-of-n limitation: Design choice, not vulnerability",
+          "Commitment validation: Validation happens in create_setup_commitment",
+          "Share generation order dependency: Standard MPC practice", 
+          "Key refresh protocols: Correctly implemented with access controls",
+          "Signature malleability prevention: Low-s properly enforced",
+          "Commitment storage: Proper verification prevents manipulation",
+          "DoS prevention: MAX_BLOCKS_TO_SIGN limit correctly applied",
+          "MTA ACK mechanism: Prevents replay attacks",
+          "Signature verification: Ensures valid signatures only",
+          "Challenge generation: Fiat-Shamir correctly implemented",
+          "MTA proof verification: Range checks prevent overflow",
+          "Batch verification: Provides statistical security",
+          "Device type restriction: Enforces protocol model"
+        ]
+      },
       "risk_distribution": {
-        "critical": 0,
-        "high": 1,
+        "critical": 1,
+        "high": 2,
         "medium": 1,
-        "low": 0
+        "low": 1
       }
     },
-    "next_focus": "Fix critical issues: 1) Replace assert with proper exception handling in asymmetric_eddsa_cosigner.cpp, 2) Consider constant-time alternatives for ciphertext validation in mta.cpp if timing leaks are a concern"
+    "next_focus": "Fix critical issues: 1) Replace assert with exception in asymmetric_eddsa_cosigner.cpp, 2) Improve backup failure handling in create_secret, 3) Add share validation in add_user function"
   }
 }

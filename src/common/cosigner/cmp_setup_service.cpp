@@ -58,8 +58,7 @@ void cmp_setup_service::generate_setup_commitments(const std::string& key_id, co
     if (!n || !t || t > n || n > UINT8_MAX)
         throw cosigner_exception(cosigner_exception::INVALID_PARAMETERS);
     
-    // @audit Security-Critical: CMP protocol only supports n-of-n signatures, not threshold
-    // ↳ This limitation means all parties must participate - no fault tolerance
+    // @audit-ok: CMP protocol design requires n-of-n, properly enforced with error
     if (t != n)
     {
         LOG_ERROR("CMP protocol doesn't support threshold signatures");
@@ -127,6 +126,7 @@ void cmp_setup_service::generate_setup_commitments(const std::string& key_id, co
     OPENSSL_cleanse(key, sizeof(elliptic_curve256_scalar_t));
 }
 
+// @audit-ok: Commitment content is validated in create_setup_commitment with verify=true
 void cmp_setup_service::store_setup_commitments(const std::string& key_id, const std::map<uint64_t, commitment>& commitments, setup_decommitment& decommitment)
 {
     verify_tenant_id(_service, _key_persistency, key_id);
@@ -189,6 +189,7 @@ void cmp_setup_service::generate_setup_proofs(const std::string& key_id, const s
     _key_persistency.store_key_metadata(key_id, metadata, true);
 }
 
+// @audit-ok: Comprehensive ZKP verification prevents malicious setup attempts
 void cmp_setup_service::verify_setup_proofs(const std::string& key_id, const std::map<uint64_t, setup_zk_proofs>& proofs, std::map<uint64_t, byte_vector_t>& paillier_large_factor_proofs)
 {
     verify_tenant_id(_service, _key_persistency, key_id);
@@ -200,6 +201,8 @@ void cmp_setup_service::verify_setup_proofs(const std::string& key_id, const std
     auto algebra = get_algebra(metadata.algorithm);
     memcpy(pubkey, *algebra->infinity_point(algebra), sizeof(elliptic_curve256_point_t));
     bool verify = memcmp(pubkey, metadata.public_key, sizeof(elliptic_curve256_point_t)) != 0; //if public key is set we should verify it
+    // @audit Error-Handling: Misleading use of throw_cosigner_exception for normal operation
+    // ↳ Function name suggests error handling but used for point addition
     for (auto i = metadata.players_info.begin(); i != metadata.players_info.end(); ++i)
         throw_cosigner_exception(algebra->add_points(algebra, &pubkey, &pubkey, &i->second.public_share.data));
 
@@ -233,6 +236,7 @@ void cmp_setup_service::verify_setup_proofs(const std::string& key_id, const std
     }
 }
 
+// @audit-ok: Proper verification of paillier large factor proofs before key finalization
 void cmp_setup_service::create_secret(const std::string& key_id, const std::map<uint64_t, std::map<uint64_t, byte_vector_t>>& paillier_large_factor_proofs, std::string& public_key, cosigner_sign_algorithm& algorithm)
 {
     verify_tenant_id(_service, _key_persistency, key_id);
@@ -286,6 +290,8 @@ void cmp_setup_service::create_secret(const std::string& key_id, const std::map<
     _key_persistency.load_key(key_id, algo, key.data);
 
     LOG_INFO("backing up keyid %s..", key_id.c_str());
+    // @audit Backup-Failure: Key backup failure leaves key in limbo state
+    // ↳ If backup fails, key is deleted but may have been partially distributed
     if (!_service.backup_key(key_id, metadata.algorithm, key.data, metadata, aux))
     {
         LOG_ERROR("failed to backup key id %s", key_id.c_str());
@@ -297,6 +303,7 @@ void cmp_setup_service::create_secret(const std::string& key_id, const std::map<
     LOG_INFO("key share created for keyid %s, and algorithm %s", key_id.c_str(), to_string(metadata.algorithm));
 }
 
+// @audit-ok: Comprehensive validation for add user request parameters
 void cmp_setup_service::add_user_request(const std::string& key_id, cosigner_sign_algorithm algorithm, const std::string& new_key_id, const std::vector<uint64_t>& players_ids, uint8_t t, add_user_data& data)
 {
     verify_tenant_id(_service, _key_persistency, key_id);
@@ -361,6 +368,7 @@ void cmp_setup_service::add_user_request(const std::string& key_id, cosigner_sig
     cosigner_sign_algorithm algo;
     _key_persistency.load_key(key_id, algo, last_share.data);
     
+    // @audit-ok: Deterministic last share is standard MPC practice to ensure sum = key
     for (size_t i = 0; i < (size_t)(n - 1); i++)
     {
         uint64_t id = players_ids[i];
@@ -375,6 +383,8 @@ void cmp_setup_service::add_user_request(const std::string& key_id, cosigner_sig
     data.encrypted_shares[id] = _service.encrypt_for_player(id, byte_vector_t(last_share.data, &last_share.data[sizeof(elliptic_curve256_scalar_t)]));
 }
 
+// @audit Reconstruction-Risk: Critical function reconstructs private key from shares
+// ↳ If malicious party sends invalid shares, key recovery could fail or leak
 void cmp_setup_service::add_user(const std::string& tenant_id, const std::string& key_id, cosigner_sign_algorithm algorithm, uint8_t t, const std::map<uint64_t, add_user_data>& data, uint64_t ttl, commitment& setup_commitment)
 {
     if (data.size() == 0)

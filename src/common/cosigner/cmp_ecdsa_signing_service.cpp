@@ -249,8 +249,7 @@ elliptic_curve_scalar cmp_ecdsa_signing_service::derivation_key_delta(const elli
     return derived_privkey;
 }
 
-// @audit Signature-Malleability: Enforces low-s rule to prevent signature malleability
-// ↳ Critical for blockchain compatibility and preventing transaction malleability attacks
+// @audit-ok: Low-s enforcement correctly prevents signature malleability attacks
 void cmp_ecdsa_signing_service::make_sig_s_positive(cosigner_sign_algorithm algorithm, elliptic_curve256_algebra_ctx_t* algebra, recoverable_signature& sig)
 {
     // calling is_positive as optimization for not calling GFp_curve_algebra_abs unless needed

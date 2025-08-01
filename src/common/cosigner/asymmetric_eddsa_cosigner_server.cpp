@@ -34,6 +34,7 @@ asymmetric_eddsa_cosigner_server::signing_persistency::~signing_persistency()
 asymmetric_eddsa_cosigner_server::asymmetric_eddsa_cosigner_server(platform_service& cosigner_service, const cmp_key_persistency& key_persistency, signing_persistency& signing_persistency) :
     asymmetric_eddsa_cosigner(cosigner_service, key_persistency), _signing_persistency(signing_persistency), _timing_map(cosigner_service) {}
 
+// @audit-ok: Comprehensive validation for EdDSA presigning data storage
 void asymmetric_eddsa_cosigner_server::store_presigning_data(const std::string& key_id, const std::string& request_id, uint32_t start_index, uint32_t count, uint32_t total_count, const std::set<uint64_t>& players_ids,
     uint64_t sender, const std::vector<eddsa_commitment>& R_commitments)
 {
@@ -61,6 +62,7 @@ void asymmetric_eddsa_cosigner_server::store_presigning_data(const std::string& 
         throw cosigner_exception(cosigner_exception::INVALID_PARAMETERS);
     }
 
+    // @audit-ok: Device type restriction correctly enforces asymmetric protocol model
     if (!_service.is_client_id(sender))
     {
         LOG_ERROR("client id %" PRIu64 " is not an mobile device", sender);

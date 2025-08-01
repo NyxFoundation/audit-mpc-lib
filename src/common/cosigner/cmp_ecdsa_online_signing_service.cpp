@@ -88,7 +88,7 @@ void cmp_ecdsa_online_signing_service::start_signing(const std::string& key_id, 
     }
 
     size_t blocks = data.blocks.size();
-    // @audit DoS: MAX_BLOCKS_TO_SIGN limit prevents resource exhaustion attacks
+    // @audit-ok: MAX_BLOCKS_TO_SIGN limit prevents resource exhaustion attacks
     if (blocks > MAX_BLOCKS_TO_SIGN)
     {
         LOG_ERROR("got too many blocks to sign %lu", blocks);
@@ -143,6 +143,7 @@ void cmp_ecdsa_online_signing_service::start_signing(const std::string& key_id, 
     _signing_persistency.store_cmp_signing_data(txid, info);
 }
 
+// @audit-ok: MTA response generation with proper ZKP verification
 uint64_t cmp_ecdsa_online_signing_service::mta_response(const std::string& txid, const std::map<uint64_t, std::vector<cmp_mta_request>>& requests, uint32_t version, cmp_mta_responses& response)
 {
     (void)version;
@@ -158,6 +159,7 @@ uint64_t cmp_ecdsa_online_signing_service::mta_response(const std::string& txid,
     }
 
     static const commitments_sha256_t ZERO = {0};
+    // @audit-ok: ACK mechanism correctly prevents MTA message replay/modification
     if (memcmp(metadata.ack, ZERO, sizeof(commitments_sha256_t)) != 0)
     {
         LOG_ERROR("Can't change mta message ack");
@@ -289,6 +291,7 @@ uint64_t cmp_ecdsa_online_signing_service::mta_verify(const std::string& txid, c
     return my_id;
 }
 
+// @audit-ok: Signature share computation with proper validation
 uint64_t cmp_ecdsa_online_signing_service::get_si(const std::string& txid, const std::map<uint64_t, std::vector<cmp_mta_deltas>>& deltas, std::vector<elliptic_curve_scalar>& sis)
 {
     LOG_INFO("Entering txid = %s", txid.c_str());
@@ -397,6 +400,7 @@ uint64_t cmp_ecdsa_online_signing_service::get_si(const std::string& txid, const
     return my_id;
 }
 
+// @audit-ok: Final signature assembly with proper validation
 uint64_t cmp_ecdsa_online_signing_service::get_cmp_signature(const std::string& txid, const std::map<uint64_t, std::vector<elliptic_curve_scalar>>& s, std::vector<recoverable_signature>& full_sig)
 {
     LOG_INFO("Entering txid = %s", txid.c_str());
@@ -460,6 +464,7 @@ uint64_t cmp_ecdsa_online_signing_service::get_cmp_signature(const std::string& 
             throw cosigner_exception(cosigner_exception::INTERNAL_ERROR);
         }
         
+        // @audit-ok: Signature verification ensures only valid signatures are returned
         elliptic_curve_algebra_status status = GFp_curve_algebra_verify_signature(curve, &derived_public_key, &data.message, &sig.r, &sig.s);
         if (status != ELLIPTIC_CURVE_ALGEBRA_SUCCESS)
         {

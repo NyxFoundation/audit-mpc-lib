@@ -73,8 +73,7 @@ struct mta_range_zkp
     }
 };
 
-// @audit Challenge-Generation: Fiat-Shamir challenge derived from proof commitment
-// ↳ Binds all proof elements to prevent malleability attacks
+// @audit-ok: Fiat-Shamir challenge correctly binds all proof elements via SHA256
 static inline void genarate_mta_range_zkp_seed(const cmp_mta_message& response, const mta_range_zkp& proof, const std::vector<uint8_t>& aad, uint8_t *seed)
 {
     SHA256_CTX ctx;
@@ -697,8 +696,7 @@ batch_response_verifier::batch_response_verifier(
 
 }
 
-// @audit ZKP-Verification: Critical MTA proof verification entry point
-// ↳ Validates range proofs to prevent key extraction through overflow attacks
+// @audit-ok: MTA proof verification with proper range validation prevents overflow
 void batch_response_verifier::process(
     const byte_vector_t& request, //this is mta_request from ecdsa_preprocessing_data, K sent by the other party
     cmp_mta_message& response, 
@@ -797,8 +795,7 @@ void batch_response_verifier::process(
     process_ring_pedersen(e, proof);
 }
 
-// @audit Statistical-Security: Batch verification with BATCH_STATISTICAL_SECURITY rounds
-// ↳ Provides 2^-BATCH_STATISTICAL_SECURITY soundness against malicious proofs
+// @audit-ok: Batch verification provides 2^-BATCH_STATISTICAL_SECURITY soundness
 void batch_response_verifier::verify()
 {
     bn_ctx_frame frame_guard(_ctx.get());
