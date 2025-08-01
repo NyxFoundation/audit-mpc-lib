@@ -25,12 +25,17 @@ asymmetric_eddsa_cosigner::asymmetric_eddsa_cosigner(platform_service& cosigner_
     }
 }
 
+// @audit-ok: HD key derivation follows BIP-32 standards with proper error handling
 void asymmetric_eddsa_cosigner::derivation_key_delta(const elliptic_curve256_point_t& public_key, const HDChaincode& chaincode, const std::vector<uint32_t>& path, uint8_t split_factor, 
         ed25519_scalar_t& delta, ed25519_point_t& derived_pubkey)
 {
     static const PrivKey ZERO = {0};
     if (path.size()) 
     {
+        // @audit Input-Validation: Assert should be replaced with proper validation
+        // ↳ Runtime assertion could crash in production if path length invalid
+        // ↳ Attack vector: Malicious client sends path.size() != 5, causing process crash
+        // ↳ Fix: Replace with if (path.size() != BIP44_PATH_LENGTH) throw cosigner_exception
         assert(path.size() == BIP44_PATH_LENGTH);
         PubKey tmp_derived_pubkey;
         hd_derive_status retval = derive_private_and_public_keys(_ctx.get(), delta, tmp_derived_pubkey, public_key, ZERO, chaincode, path.data(), path.size()); //derive 0 to get the derivation delta
@@ -56,6 +61,7 @@ void asymmetric_eddsa_cosigner::derivation_key_delta(const elliptic_curve256_poi
     }
 }
 
+// @audit-ok: Commitment scheme properly binds all parameters preventing manipulation
 eddsa_commitment asymmetric_eddsa_cosigner::commit_to_r(const std::string& id, uint32_t index, uint64_t player_id, const ed25519_point_t& R)
 {
     SHA256_CTX sha;

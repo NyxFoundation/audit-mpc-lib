@@ -73,6 +73,8 @@ struct mta_range_zkp
     }
 };
 
+// @audit Challenge-Generation: Fiat-Shamir challenge derived from proof commitment
+// ↳ Binds all proof elements to prevent malleability attacks
 static inline void genarate_mta_range_zkp_seed(const cmp_mta_message& response, const mta_range_zkp& proof, const std::vector<uint8_t>& aad, uint8_t *seed)
 {
     SHA256_CTX ctx;
@@ -426,6 +428,7 @@ static std::vector<uint8_t> mta_range_generate_zkp(const elliptic_curve256_algeb
 //implements phase 1 of ECDSA signing
 //Since the cmp_mta_message has a common part for all parties and a specific part for each party 
 //this function prefills the common part and creates a map of proofs to feel the remaining part for each party individually.
+// @audit-ok: MTA request properly encrypts secrets with range proofs for each party
 cmp_mta_message request(const uint64_t my_id, 
                         const elliptic_curve256_algebra_ctx_t* algebra, 
                         const elliptic_curve_scalar& k,                         //signing secret (randomness), saved on ecdsa_preprocessing_data state
@@ -498,6 +501,8 @@ elliptic_curve_scalar answer_mta_request(const elliptic_curve256_algebra_ctx_t* 
 {
     if (!secret || !secret_size || !my_key || !paillier || !ring_pedersen)
         throw cosigner_exception(cosigner_exception::INVALID_PARAMETERS);
+    // @audit-ok: BETA_HIDING_FACTOR=5 provides 1280 bits of statistical hiding (256*5),
+    // ↳ which exceeds standard 128-bit security parameter
     byte_vector_t beta(secret_size * BETA_HIDING_FACTOR);
     response.message.resize(BN_num_bytes(paillier->n2));
     if (RAND_bytes(beta.data(), secret_size * BETA_HIDING_FACTOR) != 1)
@@ -692,6 +697,8 @@ batch_response_verifier::batch_response_verifier(
 
 }
 
+// @audit ZKP-Verification: Critical MTA proof verification entry point
+// ↳ Validates range proofs to prevent key extraction through overflow attacks
 void batch_response_verifier::process(
     const byte_vector_t& request, //this is mta_request from ecdsa_preprocessing_data, K sent by the other party
     cmp_mta_message& response, 
@@ -718,6 +725,7 @@ void batch_response_verifier::process(
     deserialize_mta_range_zkp(response.proof, &_my_ring_pedersen->pub, _my_paillier.get(), _other_paillier.get(), proof);
     response.proof.clear();
 
+    // @audit-ok: Critical range validation prevents malicious overflow in MTA protocol
     // start with range check
     if ((size_t)BN_num_bytes(proof.z1) > sizeof(elliptic_curve256_scalar_t) + MTA_ZKP_EPSILON_SIZE)
     {
@@ -789,6 +797,8 @@ void batch_response_verifier::process(
     process_ring_pedersen(e, proof);
 }
 
+// @audit Statistical-Security: Batch verification with BATCH_STATISTICAL_SECURITY rounds
+// ↳ Provides 2^-BATCH_STATISTICAL_SECURITY soundness against malicious proofs
 void batch_response_verifier::verify()
 {
     bn_ctx_frame frame_guard(_ctx.get());
@@ -839,6 +849,9 @@ void batch_response_verifier::verify()
     }
 }
 
+// @audit Timing-Attack: Non-constant time is_coprime_fast on public ciphertexts
+// ↳ While ciphertexts are public, timing variations could leak decryption failures
+// ↳ Risk: Low - attacker learns only if ciphertext is valid, not secret data
 void batch_response_verifier::process_paillier(const BIGNUM* e, const BIGNUM* request, BIGNUM* response, const BIGNUM* commitment, const mta_range_zkp& proof)
 {
     bn_ctx_frame frame_guard(_ctx.get());

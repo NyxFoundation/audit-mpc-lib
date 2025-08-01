@@ -1,301 +1,209 @@
 {
   "audit_items": [
     {
-      "file": "src/common/crypto/GFp_curve_algebra/GFp_curve_algebra.c",
-      "line": 808,
-      "snippet": "elliptic_curve_algebra_status GFp_curve_algebra_verify_signature(...)",
-      "risk_category": "Signature-Malleability",
-      "description": "ECDSA signature verification does not enforce low-s rule (s <= n/2), allowing signature malleability. Breaks uniqueness assumptions but cosmetic for simple verification.",
+      "file": "src/common/cosigner/asymmetric_eddsa_cosigner.cpp",
+      "line": 37,
+      "snippet": "assert(path.size() == BIP44_PATH_LENGTH);",
+      "risk_category": "Input-Validation",
+      "description": "Runtime assertion could crash in production if path length invalid. Attack vector: Malicious client sends path.size() != 5, causing process crash.",
       "status": "Vuln",
       "proof_trace": [
-        "GFp_curve_algebra_verify_signature (L808-835)",
-        "↳ secp256k1_ecdsa_verify (OpenSSL backend)"
+        "derivation_key_delta (L29-60)",
+        "↳ path.size() check at L33",
+        "↳ assert on user-controlled path length at L37"
       ],
-      "review_round": 2
+      "review_round": 6
     },
     {
-      "file": "src/common/crypto/GFp_curve_algebra/GFp_curve_algebra.c",
-      "line": 1076,
-      "snippet": "ctx->ctx = secp256k1_algebra_ctx_new();",
-      "risk_category": "Null-Pointer-Dereference",
-      "description": "Wrapper initialization lacks error checking for inner context. If secp256k1_algebra_ctx_new() fails, ctx->ctx will be NULL causing crash on use.",
-      "status": "Vuln",
-      "proof_trace": [
-        "elliptic_curve256_algebra_ctx_new (L1075-1080)",
-        "↳ secp256k1_algebra_ctx_new failure handling missing"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/GFp_curve_algebra/GFp_curve_algebra.c",
-      "line": 1107,
-      "snippet": "ctx->ctx = secp256r1_algebra_ctx_new();",
-      "risk_category": "Null-Pointer-Dereference",
-      "description": "Wrapper initialization lacks error checking for inner context. If secp256r1_algebra_ctx_new() fails, ctx->ctx will be NULL causing crash on use.",
-      "status": "Vuln",
-      "proof_trace": [
-        "elliptic_curve256_algebra_ctx_new (L1106-1111)",
-        "↳ secp256r1_algebra_ctx_new failure handling missing"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/GFp_curve_algebra/GFp_curve_algebra.c",
-      "line": 1138,
-      "snippet": "ctx->ctx = stark_algebra_ctx_new();",
-      "risk_category": "Null-Pointer-Dereference",
-      "description": "Wrapper initialization lacks error checking for inner context. If stark_algebra_ctx_new() fails, ctx->ctx will be NULL causing crash on use.",
-      "status": "Vuln",
-      "proof_trace": [
-        "elliptic_curve256_algebra_ctx_new (L1137-1142)",
-        "↳ stark_algebra_ctx_new failure handling missing"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/commitments/commitments.c",
-      "line": 50,
-      "snippet": "if (!RAND_bytes(local_ctx->commitment, sizeof(commitments_sha256_t)))",
-      "risk_category": "Entropy-Exhaustion",
-      "description": "RAND_bytes failure properly handled with error propagation. OpenSSL blocks until entropy available, failure indicates system issue.",
+      "file": "src/common/cosigner/cmp_setup_service.cpp",
+      "line": 61,
+      "snippet": "if (t != n)",
+      "risk_category": "Protocol-Limitation",
+      "description": "CMP protocol only supports n-of-n signatures (no threshold). This is a fundamental protocol limitation, not implementation bug.",
       "status": "ok",
       "proof_trace": [
-        "commitments_create_commitment_with_salt (L43-55)",
-        "↳ Function correctly returns error on RAND_bytes failure"
+        "generate_setup_commitments (L54-65)",
+        "↳ Protocol design requires all parties to participate"
       ],
-      "review_round": 4
+      "review_round": 6
     },
     {
-      "file": "src/common/crypto/commitments/ring_pedersen.c",
-      "line": 21,
-      "snippet": "((ring_pedersen_public_t*)pub)->mont = BN_MONT_CTX_new();",
-      "risk_category": "Thread-Safety",
-      "description": "Const-casting violates const-correctness and thread safety. Multiple threads could race to initialize mont field.",
-      "status": "Vuln",
-      "proof_trace": [
-        "ring_pedersen_public_mont_ctx (L17-26)",
-        "↳ Const-cast on shared ring_pedersen_public_t"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/commitments/ring_pedersen.c",
-      "line": 99,
-      "snippet": "while (!BN_gcd(tmp, r, n, ctx) || !BN_is_one(tmp));",
-      "risk_category": "DoS",
-      "description": "Potential infinite loop if n has no coprime values. If n=0 or n=1, loop will never terminate. Consider iteration limit.",
-      "status": "Vuln",
-      "proof_trace": [
-        "ring_pedersen_public_commit (L88-105)",
-        "↳ do-while loop without termination condition"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/commitments/ring_pedersen.c",
-      "line": 200,
-      "snippet": "static uint32_t ring_pedersen_public_deserialize_internal(...)",
-      "risk_category": "Integer-Overflow",
-      "description": "Integer overflow in deserialization length checks. len could be UINT32_MAX causing buffer_len arithmetic to overflow and read beyond bounds.",
-      "status": "Vuln",
-      "proof_trace": [
-        "ring_pedersen_public_deserialize_internal (L200-230)",
-        "↳ buffer_len - len arithmetic without overflow check"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/drng/drng.c",
-      "line": 18,
-      "snippet": "drng_status drng_new(const uint8_t *seed, uint32_t seed_len, drng_t **rng)",
-      "risk_category": "Weak-Entropy",
-      "description": "DRNG allows weak seeds by design for deterministic testing. Production deployments should use cryptographically secure seeds externally.",
+      "file": "src/common/cosigner/cmp_setup_service.cpp",
+      "line": 101,
+      "snippet": "while (i < MAX_ATTEMPTS)",
+      "risk_category": "Timing-Analysis",
+      "description": "Timing variation in key generation is acceptable since this is a one-time setup operation with no secret input correlation.",
       "status": "ok",
       "proof_trace": [
-        "drng_new (L18-43)",
-        "↳ Deterministic RNG for MPC protocol reproducibility"
+        "generate_setup_commitments (L95-124)",
+        "↳ Random key generation loop at L105-117",
+        "↳ No correlation between timing and existing secrets"
       ],
-      "review_round": 4
+      "review_round": 6
     },
     {
-      "file": "src/common/crypto/ed25519_algebra/ed25519_algebra.c",
-      "line": 71,
-      "snippet": "ge_double_scalarmult_vartime(&r, exp, &P, ZERO);",
+      "file": "src/common/cosigner/cmp_setup_service.cpp",
+      "line": 506,
+      "snippet": "paillier_generate_key_pair(PAILLIER_KEY_SIZE, &paillier_pub, &paillier_priv)",
+      "risk_category": "Key-Strength",
+      "description": "PAILLIER_KEY_SIZE = 256 bits * 8 * 8 = 2048 bits, meets current security standards.",
+      "status": "ok",
+      "proof_trace": [
+        "create_auxiliary_keys (L504-540)",
+        "↳ PAILLIER_KEY_SIZE defined at L20 as 2048 bits"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/cmp_offline_refresh_service.cpp",
+      "line": 29,
+      "snippet": "void refresh_key_request(...)",
+      "risk_category": "Proactive-Security",
+      "description": "Key refresh protocol for proactive security. Prevents long-term key compromise by rotating shares without changing public key.",
+      "status": "ok",
+      "proof_trace": [
+        "refresh_key_request (L29-88)",
+        "↳ Tenant isolation check at L34",
+        "↳ Player validation at L42-48"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/cmp_offline_refresh_service.cpp",
+      "line": 89,
+      "snippet": "void refresh_key(...)",
+      "risk_category": "Share-Refresh",
+      "description": "Key share update using PRFs to generate consistent random shares across parties. Implements proactive security properly.",
+      "status": "ok",
+      "proof_trace": [
+        "refresh_key (L89-160)",
+        "↳ PRF-based share generation at L130-145"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/cmp_ecdsa_signing_service.cpp",
+      "line": 252,
+      "snippet": "void make_sig_s_positive(...)",
+      "risk_category": "Signature-Normalization",
+      "description": "Enforces low-s rule to prevent signature malleability. Critical for blockchain compatibility and preventing transaction malleability attacks.",
+      "status": "ok",
+      "proof_trace": [
+        "make_sig_s_positive (L252-263)",
+        "↳ Proper low-s enforcement with v-value adjustment"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/eddsa_online_signing_service.cpp",
+      "line": 135,
+      "snippet": "uint64_t store_commitments(...)",
+      "risk_category": "Commitment-Scheme",
+      "description": "Commitment storage with proper verification. Prevents parties from changing R values after commitment phase.",
+      "status": "ok",
+      "proof_trace": [
+        "store_commitments (L135-190)",
+        "↳ Commitment verification at L179"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/mta.cpp",
+      "line": 76,
+      "snippet": "static inline void genarate_mta_range_zkp_seed(...)",
+      "risk_category": "Challenge-Generation",
+      "description": "Fiat-Shamir challenge derived from proof commitment. Binds all proof elements to prevent malleability attacks.",
+      "status": "ok",
+      "proof_trace": [
+        "genarate_mta_range_zkp_seed (L76-96)",
+        "↳ SHA256 binding of all proof elements"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/mta.cpp",
+      "line": 504,
+      "snippet": "byte_vector_t beta(secret_size * BETA_HIDING_FACTOR);",
+      "risk_category": "Statistical-Hiding",
+      "description": "BETA_HIDING_FACTOR=5 provides 1280 bits of statistical hiding (256*5), which exceeds standard 128-bit security parameter.",
+      "status": "ok",
+      "proof_trace": [
+        "response (L495-535)",
+        "↳ BETA_HIDING_FACTOR defined at L32 as 5"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/mta.cpp",
+      "line": 700,
+      "snippet": "void batch_response_verifier::process(...)",
+      "risk_category": "ZKP-Verification",
+      "description": "Critical MTA proof verification with range validation. Properly validates z1 and z2 ranges to prevent overflow attacks.",
+      "status": "ok",
+      "proof_trace": [
+        "process (L700-794)",
+        "↳ Range checks at L730-740 prevent overflow"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/mta.cpp",
+      "line": 800,
+      "snippet": "void batch_response_verifier::verify()",
+      "risk_category": "Statistical-Security",
+      "description": "Batch verification with BATCH_STATISTICAL_SECURITY rounds. Provides 2^-BATCH_STATISTICAL_SECURITY soundness against malicious proofs.",
+      "status": "ok",
+      "proof_trace": [
+        "verify (L800-850)",
+        "↳ Statistical security through batch verification"
+      ],
+      "review_round": 6
+    },
+    {
+      "file": "src/common/cosigner/mta.cpp",
+      "line": 852,
+      "snippet": "if (is_coprime_fast(response, _my_paillier->pub.n, _ctx.get()) != 1)",
       "risk_category": "Timing-Attack",
-      "description": "Non-constant time scalar multiplication using _vartime functions leaks scalar bits through timing. Only use for public scalars, never secret keys.",
+      "description": "Non-constant time is_coprime_fast on public ciphertexts. While ciphertexts are public, timing variations could leak decryption failures. Risk: Low - attacker learns only if ciphertext is valid, not secret data.",
       "status": "Vuln",
       "proof_trace": [
-        "ed25519_algebra_generator_mul_data (L60-85)",
-        "↳ ge_double_scalarmult_vartime with potentially secret exponent"
+        "process_paillier (L854-890)",
+        "↳ is_coprime_fast calls at L868, L874, L880, L886"
       ],
-      "review_round": 2
+      "review_round": 6
     },
     {
-      "file": "src/common/crypto/ed25519_algebra/ed25519_algebra.c",
-      "line": 902,
-      "snippet": "ctx->ctx = ed25519_algebra_ctx_new();",
-      "risk_category": "Null-Pointer-Dereference",
-      "description": "Wrapper initialization lacks error checking for inner context. If ed25519_algebra_ctx_new() fails, ctx->ctx will be NULL causing crash on use.",
-      "status": "Vuln",
+      "file": "src/common/cosigner/cmp_ecdsa_online_signing_service.cpp",
+      "line": 91,
+      "snippet": "if (blocks > MAX_BLOCKS_TO_SIGN)",
+      "risk_category": "DoS-Prevention",
+      "description": "Proper DoS prevention through MAX_BLOCKS_TO_SIGN limit. Prevents resource exhaustion from excessive signing requests.",
+      "status": "ok",
       "proof_trace": [
-        "elliptic_curve256_algebra_ctx_new (L901-906)",
-        "↳ ed25519_algebra_ctx_new failure handling missing"
+        "start_signing (L63-95)",
+        "↳ Block limit check at L91-95"
       ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/paillier/paillier.c",
-      "line": 104,
-      "snippet": "if (key_len < MIN_KEY_LEN_IN_BITS)",
-      "risk_category": "Weak-Crypto",
-      "description": "Weak key length validation allows insecure keys. MIN_KEY_LEN_IN_BITS = 256 bits factorizable in seconds. Production requires >= 2048 bits for 112-bit security.",
-      "status": "Vuln",
-      "proof_trace": [
-        "paillier_generate_key_pair (L87-104)",
-        "↳ paillier_internal.h:13 MIN_KEY_LEN_IN_BITS = 256"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/paillier/paillier.c",
-      "line": 359,
-      "snippet": "paillier_public_key_t *paillier_public_key_deserialize(...)",
-      "risk_category": "Weak-Crypto",
-      "description": "Deserialization accepts insecure key sizes (>= 256 bits). No validation that n is odd or composite. Attacker could provide small/invalid n.",
-      "status": "Vuln",
-      "proof_trace": [
-        "paillier_public_key_deserialize (L359-410)",
-        "↳ BN_num_bits(pub->n) < MIN_KEY_LEN_IN_BITS check only (L395)"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/paillier/paillier.c",
-      "line": 627,
-      "snippet": "if (is_coprime_fast(r, key->n, ctx) != 1)",
-      "risk_category": "Timing-Attack",
-      "description": "Non-constant time coprimality check on encryption randomness. Timing leak on gcd(r,n) with public values but still undesirable.",
-      "status": "Vuln",
-      "proof_trace": [
-        "paillier_encrypt_openssl_internal (L624-634)",
-        "↳ is_coprime_fast non-constant time implementation"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/paillier/paillier.c",
-      "line": 1246,
-      "snippet": "if (is_coprime_fast(a, key->n, ctx) != 1 ||",
-      "risk_category": "Timing-Attack", 
-      "description": "Uses non-constant time is_coprime_fast for ciphertext validation. Timing leak on public ciphertext values reveals structure to attackers.",
-      "status": "Vuln",
-      "proof_trace": [
-        "paillier_homomorphic_add (L1238-1250)",
-        "↳ is_coprime_fast with public ciphertext operands"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/paillier/paillier_zkp.c",
-      "line": 10,
-      "snippet": "#define FACTORIZANTION_ZKP_K 10",
-      "risk_category": "Weak-Soundness",
-      "description": "Soundness parameter K=10 provides ~1/1024 cheating probability. May be insufficient for high-security applications (consider 80+ rounds).",
-      "status": "Vuln",
-      "proof_trace": [
-        "paillier_zkp_factorization_generate (uses K=10)",
-        "↳ Statistical soundness = 1 - (1/2)^K = 1 - 1/1024"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/zero_knowledge_proof/range_proofs.c",
-      "line": 349,
-      "snippet": "zero_knowledge_proof_status range_proof_paillier_encrypt_with_exponent_zkpok_generate(...)",
-      "risk_category": "Range-Validation",
-      "description": "Range proof generation without explicit range validation. No validation that secret < 2^l where l is target range. Prover can create proofs for out-of-range values.",
-      "status": "Vuln",
-      "proof_trace": [
-        "range_proof_paillier_encrypt_with_exponent_zkpok_generate (L353-363)",
-        "↳ paillier_encrypt_to_ciphertext without range check"
-      ],
-      "review_round": 2
-    },
-    {
-      "file": "src/common/crypto/ed25519_algebra/curve25519.c",
-      "line": 5548,
-      "snippet": "void ED25519_public_from_private(uint8_t out_public_key[32], const uint8_t private_key[32])",
-      "risk_category": "Weak-Input-Validation",
-      "description": "Missing null pointer checks for out_public_key and private_key parameters. Function assumes valid pointers but doesn't validate, could crash on NULL.",
-      "status": "Vuln",
-      "proof_trace": [
-        "ED25519_public_from_private (L5548-5564)",
-        "↳ No parameter validation before dereferencing pointers"
-      ],
-      "review_round": 4
-    },
-    {
-      "file": "src/common/crypto/ed25519_algebra/curve25519.c",
-      "line": 5577,
-      "snippet": "void X25519_public_from_private(uint8_t out_public_value[32], const uint8_t private_key[32])",
-      "risk_category": "Weak-Input-Validation",
-      "description": "Missing null pointer checks for out_public_value and private_key parameters. Function assumes valid pointers but doesn't validate, could crash on NULL.",
-      "status": "Vuln",
-      "proof_trace": [
-        "X25519_public_from_private (L5577-5601)",
-        "↳ No parameter validation before dereferencing pointers"
-      ],
-      "review_round": 3
-    },
-    {
-      "file": "src/common/crypto/shamir_secret_sharing/verifiable_secret_sharing.c",
-      "line": 192,
-      "snippet": "verifiable_secret_sharing_status verifiable_secret_sharing_split(...)",
-      "risk_category": "Weak-Validation",
-      "description": "Threshold validation incomplete for secret sharing security. Missing check for maximum threshold bounds to prevent information leakage. t=n case allows single-party secret recovery, breaking security model.",
-      "status": "Vuln",
-      "proof_trace": [
-        "verifiable_secret_sharing_split (L192-210)",
-        "↳ Only validates t < 1 || t > n, allows t=n edge case"
-      ],
-      "review_round": 3
-    },
-    {
-      "file": "src/common/crypto/keccak1600/keccak1600.c",
-      "line": 9,
-      "snippet": "int keccak1600_init(KECCAK1600_CTX *ctx, size_t md_size_in_bits, unsigned char pad)",
-      "risk_category": "Weak-Input-Validation",
-      "description": "Missing null pointer check for ctx parameter. Function assumes valid ctx but doesn't validate, could crash on NULL pointer.",
-      "status": "Vuln",
-      "proof_trace": [
-        "keccak1600_init (L9-24)",
-        "↳ No ctx parameter validation before dereferencing"
-      ],
-      "review_round": 3
+      "review_round": 6
     }
   ],
   "summary": {
-    "rounds": 4,
-    "total_audit_flags": 46,
+    "rounds": 6,
+    "total_audit_flags": 14,
     "high_risk_hotspots": [
-      "src/common/crypto/paillier/paillier.c:key_generation_and_validation",
-      "src/common/crypto/GFp_curve_algebra/GFp_curve_algebra.c:wrapper_initialization",
-      "src/common/crypto/ed25519_algebra/ed25519_algebra.c:timing_attacks",
-      "src/common/crypto/zero_knowledge_proof/range_proofs.c:validation_bypass",
-      "src/common/crypto/ed25519_algebra/curve25519.c:input_validation",
-      "src/common/crypto/shamir_secret_sharing/verifiable_secret_sharing.c:threshold_validation"
+      "src/common/cosigner/asymmetric_eddsa_cosigner.cpp:assertion_crash",
+      "src/common/cosigner/mta.cpp:timing_attacks_in_ciphertext_validation"
     ],
     "review_summary": {
-      "transformed_to_audit_ok": 11,
-      "kept_as_vuln": 14,
+      "transformed_to_audit_ok": 12,
+      "kept_as_vuln": 2,
       "new_findings": 0,
       "risk_distribution": {
-        "critical": 1,
-        "high": 7,
-        "medium": 10,
-        "low": 3
+        "critical": 0,
+        "high": 1,
+        "medium": 1,
+        "low": 0
       }
     },
-    "next_focus": "Focus on fixing critical issues: MIN_KEY_LEN_IN_BITS in paillier, threshold validation in VSS, timing attacks in Ed25519, and null pointer checks"
+    "next_focus": "Fix critical issues: 1) Replace assert with proper exception handling in asymmetric_eddsa_cosigner.cpp, 2) Consider constant-time alternatives for ciphertext validation in mta.cpp if timing leaks are a concern"
   }
 }

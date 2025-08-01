@@ -1,8 +1,8 @@
 ## 🚀 Claude Code Prompt ― “WHITEHAT 02 AUDIT Annotator & Map Updater”
 
 ````
-# 🏷️ TARGET_FOLDER      = src/common/crypto
-# 🏷️ AUDIT_ORDER_FILE   = security-agent/outputs/WHITEHAT_01_SPEC.json
+# 🏷️ TARGET_FOLDER      = src/common/cosigner
+# 🏷️ AUDIT_ORDER_FILE   = src/common/cosigner/WHITEHAT_01_SPEC.json
 # ==========  PROMPT START  ==========
 # Task Name
 Annotate source with @audit / @audit-ok and update WHITEHAT_02_AUDITMAP.json

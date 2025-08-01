@@ -62,6 +62,7 @@ cmp_ecdsa_online_signing_service::cmp_ecdsa_online_signing_service(platform_serv
 void cmp_ecdsa_online_signing_service::start_signing(const std::string& key_id, const std::string& txid, cosigner_sign_algorithm algorithm, const signing_data& data, const std::string& metadata_json, const std::set<std::string>& players, const std::set<uint64_t>& players_ids, std::vector<cmp_mta_request>& mta_requests)
 {
     LOG_INFO("Entering txid = %s", txid.c_str());
+    // @audit-ok: Tenant isolation check prevents cross-tenant key access
     verify_tenant_id(_service, _key_persistency, key_id);
     cmp_key_metadata metadata;
     _key_persistency.load_key_metadata(key_id, metadata, true);
@@ -87,6 +88,7 @@ void cmp_ecdsa_online_signing_service::start_signing(const std::string& key_id, 
     }
 
     size_t blocks = data.blocks.size();
+    // @audit DoS: MAX_BLOCKS_TO_SIGN limit prevents resource exhaustion attacks
     if (blocks > MAX_BLOCKS_TO_SIGN)
     {
         LOG_ERROR("got too many blocks to sign %lu", blocks);

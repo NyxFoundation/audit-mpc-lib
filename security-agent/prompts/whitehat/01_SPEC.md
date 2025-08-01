@@ -1,6 +1,6 @@
 # ==========  PROMPT START  ==========
 # Task Name
-Generate WHITEHAT_01_SPEC.json from src/common/crypto
+Generate WHITEHAT_01_SPEC.json from src/common/cosigner
 
 # 🎯 Goal
 Before beginning a source‑code security audit, produce a *comprehensive* specification

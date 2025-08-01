@@ -132,6 +132,8 @@ void eddsa_online_signing_service::start_signing(const std::string& key_id, cons
     _signing_persistency.store_signing_data(txid, info);    
 }
 
+// @audit Commitment-Storage: Verifies and stores R value commitments from all parties
+// ↳ Prevents parties from changing their R values after seeing others' commitments
 uint64_t eddsa_online_signing_service::store_commitments(const std::string& txid, const std::map<uint64_t, std::vector<commitment>>& commitments, uint32_t version, std::vector<elliptic_curve_point>& R)
 {
     LOG_INFO("Entering txid = %s", txid.c_str());

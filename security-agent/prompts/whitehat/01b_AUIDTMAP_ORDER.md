@@ -1,7 +1,7 @@
 ## 🚀 Claude Code Prompt ― “WHITEHAT 01b AUDITMAP ORDER Generator”
 
 ````
-# 🏷️ TARGET_FOLDER   = {{TARGET_FOLDER}}
+# 🏷️ TARGET_FOLDER   = src/common/cosigner
 # 🏷️ STATIC_CALLGRAPH = NONE
 # ==========  PROMPT START  ==========
 # Task Name

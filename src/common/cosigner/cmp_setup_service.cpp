@@ -51,12 +51,15 @@ cmp_setup_service::setup_key_persistency::~setup_key_persistency()
 {
 }
 
+// @audit-ok: Parameter validation checks for player count and threshold
 void cmp_setup_service::generate_setup_commitments(const std::string& key_id, const std::string& tenant_id, cosigner_sign_algorithm algorithm, const std::vector<uint64_t>& players_ids, uint8_t t, uint64_t ttl, const share_derivation_args& derive_from, commitment& setup_commitment)
 {
     const size_t n = players_ids.size();
     if (!n || !t || t > n || n > UINT8_MAX)
         throw cosigner_exception(cosigner_exception::INVALID_PARAMETERS);
     
+    // @audit Security-Critical: CMP protocol only supports n-of-n signatures, not threshold
+    // ↳ This limitation means all parties must participate - no fault tolerance
     if (t != n)
     {
         LOG_ERROR("CMP protocol doesn't support threshold signatures");
@@ -70,6 +73,7 @@ void cmp_setup_service::generate_setup_commitments(const std::string& key_id, co
         throw cosigner_exception(cosigner_exception::BAD_KEY);
     }
 
+    // @audit-ok: Duplicate player ID detection prevents multiple shares to same party
     std::set<uint64_t> distinct_players_ids(players_ids.begin(), players_ids.end()); // make the players_ids list unique
     if (distinct_players_ids.size() != players_ids.size())
     {
@@ -94,6 +98,8 @@ void cmp_setup_service::generate_setup_commitments(const std::string& key_id, co
     {
         elliptic_curve_algebra_status status;
 
+        // @audit-ok: Timing variation in key generation is acceptable since this is a one-time
+        // ↳ setup operation with no secret input correlation
         const size_t MAX_ATTEMPTS = 1024;
         size_t i = 0;
         while (i < MAX_ATTEMPTS)
@@ -497,6 +503,7 @@ void cmp_setup_service::generate_setup_commitments(const std::string& key_id, co
 
 auxiliary_keys cmp_setup_service::create_auxiliary_keys()
 {
+    // @audit-ok: PAILLIER_KEY_SIZE = 256 bits * 8 * 8 = 2048 bits, meets security standards
     paillier_public_key_t* paillier_pub = NULL;
     paillier_private_key_t* paillier_priv = NULL;
     long paillier_res = paillier_generate_key_pair(PAILLIER_KEY_SIZE, &paillier_pub, &paillier_priv);

@@ -1,8 +1,8 @@
 ## 🚀 Claude Code Prompt ― “WHITEHAT 03 AUDIT Review & Validate”
 
 ````
-# 🏷️ TARGET_FOLDER      = src/common/crypto
-# 🏷️ AUDIT_ORDER_FILE   = security-agent/outputs/WHITEHAT_01_SPEC.json
+# 🏷️ TARGET_FOLDER      = src/common/cosigner
+# 🏷️ AUDIT_ORDER_FILE   = src/common/cosigner/WHITEHAT_01_SPEC.json
 # ==========  PROMPT START  ==========
 # Task Name
 Review all existing @audit comments, confirm validity, and update reports
@@ -15,7 +15,7 @@ If confirmed (or partially confirmed), keep `@audit`, expand insight, and
 categorise the exact risk.
 
 Finally, synchronise results into
-`security-agent/outputs/WHITEHAT_02_AUDITMAP.json`
+`security-agent/WHITEHAT_02_AUDITMAP.json`
 and increment `review_rounds` in `{{AUDIT_ORDER_FILE}}`.
 
 # 📥 Input

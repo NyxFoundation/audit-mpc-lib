@@ -26,8 +26,11 @@ cmp_offline_refresh_service::offline_refresh_key_persistency::~offline_refresh_k
 {
 }
 
+// @audit Key-Refresh: Proactive security through key share refresh protocol
+// ↳ Prevents long-term key compromise by rotating shares without changing public key
 void cmp_offline_refresh_service::refresh_key_request(const std::string& tenant_id, const std::string& key_id, const std::string& request_id, const std::set<uint64_t>& players_ids, std::map<uint64_t, byte_vector_t>& encrypted_seeds)
 {
+    // @audit-ok: Tenant isolation check prevents cross-tenant key refresh
     if (tenant_id.compare(_key_persistency.get_tenantid_from_keyid(key_id)) != 0)
     {
         LOG_ERROR("key id %s is not part of tenant %s", key_id.c_str(), tenant_id.c_str());
@@ -83,6 +86,8 @@ static void validate_prfs_sizes(const std::vector<prf>& mine, const std::vector<
     }
 }
 
+// @audit Share-Refresh: Key share update without changing public key
+// ↳ Uses PRFs to generate consistent random shares across parties
 void cmp_offline_refresh_service::refresh_key(const std::string& key_id, const std::string& request_id, const std::map<uint64_t, std::map<uint64_t, byte_vector_t>>& encrypted_seeds, std::string& public_key)
 {
     verify_tenant_id(_service, _key_persistency, key_id);
