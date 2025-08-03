@@ -5552,6 +5552,11 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
 void ED25519_public_from_private(uint8_t out_public_key[32],
                                  const uint8_t private_key[32])
 {
+    // Validate input parameters to prevent null pointer dereference
+    if (!out_public_key || !private_key) {
+        return;
+    }
+
     uint8_t az[SHA512_DIGEST_LENGTH];
     ge_p3 A;
 
@@ -5583,6 +5588,11 @@ int X25519(uint8_t out_shared_key[32], const uint8_t private_key[32],
 void X25519_public_from_private(uint8_t out_public_value[32],
                                 const uint8_t private_key[32])
 {
+    // Validate input parameters to prevent null pointer dereference
+    if (!out_public_value || !private_key) {
+        return;
+    }
+
     uint8_t e[32];
     ge_p3 A;
     fe zplusy, zminusy, zminusy_inv;

@@ -6,3 +6,23 @@ target_compile_options(ed25519_algebra_test PRIVATE -Wall -Wextra)
 target_link_libraries(ed25519_algebra_test PRIVATE tests_main)
 
 add_test(NAME ed25519_algebra_test COMMAND ed25519_algebra_test)
+
+# PoC test for ED25519_public_from_private vulnerability
+add_executable(poc_ED25519_public_from_private
+    poc_ED25519_public_from_private.cpp
+)
+
+target_compile_options(poc_ED25519_public_from_private PRIVATE -Wall -Wextra)
+target_link_libraries(poc_ED25519_public_from_private PRIVATE tests_main cosigner)
+
+add_test(NAME poc_ED25519_public_from_private COMMAND poc_ED25519_public_from_private)
+
+# Integration PoC test for ED25519_public_from_private vulnerability
+add_executable(poc_ED25519_public_from_private_integration
+    poc_ED25519_public_from_private_integration.cpp
+)
+
+target_compile_options(poc_ED25519_public_from_private_integration PRIVATE -Wall -Wextra)
+target_link_libraries(poc_ED25519_public_from_private_integration PRIVATE tests_main)
+
+add_test(NAME poc_ED25519_public_from_private_integration COMMAND poc_ED25519_public_from_private_integration)
