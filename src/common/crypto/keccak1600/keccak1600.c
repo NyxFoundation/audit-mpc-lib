@@ -12,6 +12,11 @@ void SHA3_squeeze(uint64_t A[5][5], unsigned char *out, size_t len, size_t r);
 // ↳ All callers must validate ctx != NULL before calling this function
 int keccak1600_init(KECCAK1600_CTX *ctx, size_t md_size_in_bits, unsigned char pad)
 {
+    // Fix: Add NULL pointer check
+    if (ctx == NULL) {
+        return 0;
+    }
+
     size_t bsz = (KECCAK1600_WIDTH - md_size_in_bits * 2) / 8;
     if (bsz <= sizeof(ctx->buf)) {
         memset(ctx->A, 0, sizeof(ctx->A));
@@ -29,6 +34,11 @@ int keccak1600_init(KECCAK1600_CTX *ctx, size_t md_size_in_bits, unsigned char p
 
 int keccak1600_update(KECCAK1600_CTX *ctx, const uint8_t *inp, size_t len)
 {        
+    // Add NULL pointer check
+    if (ctx == NULL) {
+        return 0;
+    }
+
     size_t bsz = ctx->block_size;
     size_t num, rem;
 
@@ -70,6 +80,11 @@ int keccak1600_update(KECCAK1600_CTX *ctx, const uint8_t *inp, size_t len)
 
 int keccak1600_final(KECCAK1600_CTX *ctx, unsigned char *md)
 {    
+    // Add NULL pointer checks
+    if (ctx == NULL || md == NULL) {
+        return 0;
+    }
+
     size_t bsz = ctx->block_size;
     size_t num = ctx->num;
 

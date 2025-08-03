@@ -3,9 +3,9 @@
 ```
 # 🏷️ REPORT_TEMPLATE   = security-agent/docs/report_templete_ethereum.md
 # 🏷️ BOUNTY_PAGE_URL   = https://ethereum.org/en/bug-bounty/
-# 🏷️ VULN_NAME         = {{VULN_NAME}}
-# 🏷️ UT_PATH           = {{UT_PATH}}
-# 🏷️ IT_PATH           = {{IT_PATH}}
+# 🏷️ VULN_NAME         = elliptic_curve256_algebra_ctx_new
+# 🏷️ UT_PATH           = test/crypto/secp256k1_algebra/poc_elliptic_curve256_algebra_ctx_new.cpp
+# 🏷️ IT_PATH           = .worktrees/elliptic_curve256_algebra_ctx_new/test/crypto/secp256k1_algebra/integration_poc_elliptic_curve256_algebra_ctx_new.cpp
 # ==========  PROMPT START  ==========
 # Task Name
 Generate a Markdown bug‑bounty report file for Ethereum Foundation
