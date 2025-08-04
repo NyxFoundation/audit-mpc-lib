@@ -1,11 +1,11 @@
 ## 🚀 Claude Code Prompt ― “WHITEHAT 04 Bug‑Bounty Report Builder”
 
 ```
-# 🏷️ REPORT_TEMPLATE   = security-agent/docs/report_templete_ethereum.md
-# 🏷️ BOUNTY_PAGE_URL   = https://ethereum.org/en/bug-bounty/
-# 🏷️ VULN_NAME         = {{VULN_NAME}}
-# 🏷️ UT_PATH           = {{UT_PATH}}
-# 🏷️ IT_PATH           = {{IT_PATH}}
+# 🏷️ REPORT_TEMPLATE   = security-agent/docs/report_mpc_lib.md
+# 🏷️ BOUNTY_PAGE_URL   = https://hackerone.com/fireblocks
+# 🏷️ VULN_NAME         = derivation_key_delta
+# 🏷️ UT_PATH           = ./test/cosigner/poc_derivation_key_delta.cpp
+# 🏷️ IT_PATH           =   ./test/cosigner/poc_derivation_key_delta_integration.cpp
 # ==========  PROMPT START  ==========
 # Task Name
 Generate a Markdown bug‑bounty report file for Ethereum Foundation

@@ -1,9 +1,9 @@
 ## 🚀 Claude Code Prompt ― “WHITEHAT Integration‑PoC Generator (DoS import)”
 
 ````
-# 🏷️ UT_PATH      = {{UT_PATH}}
-# 🏷️ IT_PATH       = {{IT_PATH}}
-# 🏷️ VULN_NAME          = {{VULN_NAME}}
+# 🏷️ UT_PATH      =   ./test/cosigner/poc_derivation_key_delta
+# 🏷️ IT_PATH       =   ./test/cosigner
+# 🏷️ VULN_NAME          = derivation_key_delta
 # ==========  PROMPT START  ==========
 # Task Name
 Create an **integration‑level PoC test** reproducing VULN_NAME

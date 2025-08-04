@@ -1,8 +1,8 @@
 ## 🚀 Claude Code Prompt ― “WHITEHAT PoC Generator & Self‑Verifying Test”
 
 ````
-# 🏷️ VULN_NAME        = {{VULN_NAME}}
-# 🏷️ OUTPUT_TEST_PATH = {{OUTPUT_TEST_PATH}}
+# 🏷️ VULN_NAME        = derivation_key_delta
+# 🏷️ OUTPUT_TEST_PATH = src/common/cosigner/
 # ==========  PROMPT START  ==========
 # Task Name
 Create & validate a minimal PoC test that reproduces VULN_NAME

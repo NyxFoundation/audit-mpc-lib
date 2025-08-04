@@ -19,3 +19,29 @@ else()
 endif()
 
 add_test(NAME cosigner_test COMMAND cosigner_test)
+
+# PoC test for derivation_key_delta vulnerability
+add_executable(poc_derivation_key_delta
+    poc_derivation_key_delta.cpp
+)
+
+if(APPLE)
+    target_link_libraries(poc_derivation_key_delta PRIVATE tests_main cosigner Threads::Threads)
+else()
+    target_link_libraries(poc_derivation_key_delta PRIVATE tests_main cosigner Threads::Threads UUID::UUID)
+endif()
+
+add_test(NAME poc_derivation_key_delta COMMAND poc_derivation_key_delta)
+
+# Integration test for derivation_key_delta DoS vulnerability
+add_executable(poc_derivation_key_delta_integration
+    poc_derivation_key_delta_integration.cpp
+)
+
+if(APPLE)
+    target_link_libraries(poc_derivation_key_delta_integration PRIVATE tests_main cosigner Threads::Threads)
+else()
+    target_link_libraries(poc_derivation_key_delta_integration PRIVATE tests_main cosigner Threads::Threads UUID::UUID)
+endif()
+
+add_test(NAME poc_derivation_key_delta_integration COMMAND poc_derivation_key_delta_integration)
