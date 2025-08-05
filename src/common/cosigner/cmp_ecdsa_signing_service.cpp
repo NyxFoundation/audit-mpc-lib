@@ -236,7 +236,12 @@ elliptic_curve_scalar cmp_ecdsa_signing_service::derivation_key_delta(const elli
     elliptic_curve_scalar derived_privkey;
     if (path.size()) 
     {
-        assert(path.size() == BIP44_PATH_LENGTH);
+        // Fixed: Using runtime validation instead of assert() to ensure validation in release builds
+        if (path.size() != BIP44_PATH_LENGTH) {
+            LOG_ERROR("Invalid BIP44 path length: expected %d, got %zu", 
+                      BIP44_PATH_LENGTH, path.size());
+            throw cosigner_exception(cosigner_exception::INVALID_PARAMETERS);
+        }
         hd_derive_status retval = derive_private_key_generic(algebra, derived_privkey.data, public_key, ZERO, chaincode, path.data(), path.size()); //derive 0 to get the derivation delta
         if (HD_DERIVE_SUCCESS != retval)
         {

@@ -36,7 +36,12 @@ void asymmetric_eddsa_cosigner::derivation_key_delta(const elliptic_curve256_poi
         // ↳ Runtime assertion could crash in production if path length invalid
         // ↳ Attack vector: Malicious client sends path.size() != 5, causing process crash
         // ↳ Fix: Replace with if (path.size() != BIP44_PATH_LENGTH) throw cosigner_exception
-        assert(path.size() == BIP44_PATH_LENGTH);
+        // Fixed: Using runtime validation instead of assert() to ensure validation in release builds
+        if (path.size() != BIP44_PATH_LENGTH) {
+            LOG_ERROR("Invalid BIP44 path length: expected %d, got %zu", 
+                      BIP44_PATH_LENGTH, path.size());
+            throw cosigner_exception(cosigner_exception::INVALID_PARAMETERS);
+        }
         PubKey tmp_derived_pubkey;
         hd_derive_status retval = derive_private_and_public_keys(_ctx.get(), delta, tmp_derived_pubkey, public_key, ZERO, chaincode, path.data(), path.size()); //derive 0 to get the derivation delta
         if (HD_DERIVE_SUCCESS != retval)

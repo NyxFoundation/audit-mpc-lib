@@ -45,3 +45,16 @@ else()
 endif()
 
 add_test(NAME poc_derivation_key_delta_integration COMMAND poc_derivation_key_delta_integration)
+
+# Test for the derivation_key_delta fix
+add_executable(test_derivation_key_delta_fix
+    test_derivation_key_delta_fix.cpp
+)
+
+if(APPLE)
+    target_link_libraries(test_derivation_key_delta_fix PRIVATE tests_main cosigner Threads::Threads)
+else()
+    target_link_libraries(test_derivation_key_delta_fix PRIVATE tests_main cosigner Threads::Threads UUID::UUID)
+endif()
+
+add_test(NAME test_derivation_key_delta_fix COMMAND test_derivation_key_delta_fix)

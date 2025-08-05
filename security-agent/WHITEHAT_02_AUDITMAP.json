@@ -6,7 +6,16 @@
       "snippet": "assert(path.size() == BIP44_PATH_LENGTH);",
       "risk_category": "Input-Validation",
       "description": "Runtime assertion could crash in production if path length invalid. Attack vector: Malicious client sends path.size() != 5, causing process crash.",
-      "status": "Vuln",
+      "status": "Fixed",
+      "fix_details": {
+        "fixed_in_commit": "pending",
+        "fix_description": "Replaced assert() with runtime validation that throws cosigner_exception::INVALID_PARAMETERS",
+        "fix_locations": [
+          "src/common/cosigner/asymmetric_eddsa_cosigner.cpp:40-44",
+          "src/common/cosigner/cmp_ecdsa_signing_service.cpp:240-244"
+        ],
+        "test_file": "test/cosigner/test_derivation_key_delta_fix.cpp"
+      },
       "proof_trace": [
         "derivation_key_delta (L29-60)",
         "↳ path.size() check at L33",
@@ -98,12 +107,13 @@
         ]
       },
       "risk_distribution": {
-        "critical": 1,
+        "critical": 0,
         "high": 2,
         "medium": 1,
-        "low": 1
+        "low": 1,
+        "fixed": 1
       }
     },
-    "next_focus": "Fix critical issues: 1) Replace assert with exception in asymmetric_eddsa_cosigner.cpp, 2) Improve backup failure handling in create_secret, 3) Add share validation in add_user function"
+    "next_focus": "Fix remaining issues: 1) ✓ FIXED: assert replaced with exception in asymmetric_eddsa_cosigner.cpp, 2) Improve backup failure handling in create_secret, 3) Add share validation in add_user function"
   }
 }

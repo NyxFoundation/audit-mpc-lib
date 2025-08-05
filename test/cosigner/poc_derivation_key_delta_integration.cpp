@@ -179,6 +179,10 @@ void dos_attack_worker_debug(dos_test_cosigner* cosigner, int thread_id, int req
 }
 #endif
 
+// UPDATE: The vulnerability has been fixed in the actual code.
+// This test demonstrates what the vulnerability looked like before the fix.
+// With the fix applied, invalid paths now throw cosigner_exception::INVALID_PARAMETERS
+// instead of causing crashes (debug) or buffer overflows (release).
 TEST_CASE("poc_derivation_key_delta_dos_integration") {
     // ① Test environment setup
     dos_test_platform platform;
@@ -261,4 +265,10 @@ TEST_CASE("poc_derivation_key_delta_dos_integration") {
     #else
         std::cerr << "=== DEBUG BUILD: Service crashes on invalid paths (availability risk) ===" << std::endl;
     #endif
+    
+    // Note about the fix
+    std::cerr << std::endl;
+    std::cerr << "NOTE: The actual cosigner code has been fixed." << std::endl;
+    std::cerr << "Invalid paths now throw cosigner_exception::INVALID_PARAMETERS" << std::endl;
+    std::cerr << "This test demonstrates the vulnerability before the fix." << std::endl;
 }

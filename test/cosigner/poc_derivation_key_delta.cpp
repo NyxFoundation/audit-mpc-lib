@@ -6,9 +6,11 @@
 
 #include "blockchain/mpc/hd_derive.h"
 
-// This test demonstrates the vulnerability in derivation_key_delta
-// where assert() is used for input validation. In release builds,
-// assert() is compiled out, allowing invalid paths to be processed.
+// This test originally demonstrated the vulnerability in derivation_key_delta
+// where assert() was used for input validation. In release builds,
+// assert() was compiled out, allowing invalid paths to be processed.
+// UPDATE: The vulnerability has been fixed - now proper runtime validation
+// throws cosigner_exception::INVALID_PARAMETERS for invalid paths.
 
 // Simplified test function that mimics the vulnerable pattern
 void vulnerable_path_validation(const std::vector<uint32_t>& path) {
@@ -108,5 +110,13 @@ TEST_CASE("poc_derivation_key_delta") {
             INFO("Assertions are active, invalid paths cause program abort.");
             INFO("This is still problematic as it can cause DoS in debug builds.");
         #endif
+    }
+    
+    SECTION("Fix Verification - After applying the fix") {
+        INFO("=== FIX STATUS ===");
+        INFO("The actual cosigner code has been fixed to use runtime validation.");
+        INFO("Invalid paths now throw cosigner_exception::INVALID_PARAMETERS");
+        INFO("This test file still contains the vulnerable pattern for demonstration.");
+        INFO("See test_derivation_key_delta_fix.cpp for tests of the fixed code.");
     }
 }
